@@ -577,11 +577,14 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     // Layout
     [self layoutVisiblePages];
     
-    // reset overlay
-    ANGArtistOverlayView *overlay = (ANGArtistOverlayView *) [self.view viewWithTag:OVERLAY_TAG];
-    [overlay removeFromSuperview];
-    overlay = nil;
-    [self addArtistOverlay:[self artistForPhotoAtIndex:_currentPageIndex]];
+    if(!_gridController)
+    {
+        // reset overlay
+        ANGArtistOverlayView *overlay = (ANGArtistOverlayView *) [self.view viewWithTag:OVERLAY_TAG];
+        [overlay removeFromSuperview];
+        overlay = nil;
+        [self addArtistOverlay:[self artistForPhotoAtIndex:_currentPageIndex]];
+    }
 }
 
 - (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
@@ -995,7 +998,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     }
     
     // load the overlay
-    [self addArtistOverlay:[self artistForPhotoAtIndex:index]];
+    if(!_gridController)
+        [self addArtistOverlay:[self artistForPhotoAtIndex:index]];
     
     // Notify delegate
     if (index != _previousPageIndex) {
