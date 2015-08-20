@@ -20,6 +20,7 @@
     NSMutableArray *_photos;
     NSMutableArray *_thumbPhotos;
 	NSArray *_fixedPhotosArray; // Provided via init
+    NSArray *_anghamiPhotos;
 	
 	// Views
 	UIScrollView *_pagingScrollView;
@@ -81,11 +82,6 @@
 - (void)layoutVisiblePages;
 - (void)performLayout;
 - (BOOL)presentingViewControllerPrefersStatusBarHidden;
-
-// Nav Bar Appearance
-- (void)setNavBarAppearance:(BOOL)animated;
-- (void)storePreviousNavBarAppearance;
-- (void)restorePreviousNavBarAppearance:(BOOL)animated;
 
 // Paging
 - (void)tilePages;

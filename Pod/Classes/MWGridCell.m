@@ -32,14 +32,14 @@
     if ((self = [super initWithFrame:frame])) {
 
         // Grey background
-        self.backgroundColor = [UIColor colorWithWhite:0.12 alpha:1];
-        
+        self.backgroundColor = [UIColor colorWithHexString:@"ececee"];
         // Image
         _imageView = [UIImageView new];
         _imageView.frame = self.bounds;
         _imageView.contentMode = UIViewContentModeScaleAspectFill;
         _imageView.clipsToBounds = YES;
         _imageView.autoresizesSubviews = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+        _imageView.image = [ANGArtworkFactory defaultPhotoPlaceHolder];
         [self addSubview:_imageView];
         
         // Video Image

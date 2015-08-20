@@ -35,6 +35,8 @@
 - (BOOL)photoBrowser:(MWPhotoBrowser *)photoBrowser isPhotoSelectedAtIndex:(NSUInteger)index;
 - (void)photoBrowser:(MWPhotoBrowser *)photoBrowser photoAtIndex:(NSUInteger)index selectedChanged:(BOOL)selected;
 - (void)photoBrowserDidFinishModalPresentation:(MWPhotoBrowser *)photoBrowser;
+// to show artistOverlay
+- (Artist *) artistForPhotoAtIndex:(NSUInteger)index;
 
 @end
 
@@ -52,6 +54,8 @@
 @property (nonatomic) BOOL autoPlayOnAppear;
 @property (nonatomic) NSUInteger delayToHideElements;
 @property (nonatomic, readonly) NSUInteger currentIndex;
+@property (nonatomic) BOOL placeToolBarItemsOnRightBar;
+@property (nonatomic) BOOL overrideBackground;
 
 // Customise image selection icons as they are the only icons with a colour tint
 // Icon should be located in the app's main bundle
@@ -61,6 +65,9 @@
 // Init
 - (id)initWithPhotos:(NSArray *)photosArray;
 - (id)initWithDelegate:(id <MWPhotoBrowserDelegate>)delegate;
+
+// CustomInit
+- (id)initWithAnghamiPhotos:(NSArray *)anghamiPhotos;
 
 // Reloads the photo browser and refetches data
 - (void)reloadData;

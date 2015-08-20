@@ -12,12 +12,20 @@
 #import "MWPhotoBrowserPrivate.h"
 #import "SDImageCache.h"
 #import "UIImage+MWPhotoBrowser.h"
+#import "UIImageView+BlurEffect.h"
+#import "ANGArtistOverlayView.h"
+#import "Photo.h"
 
 #define PADDING                  10
-
+#define miniPlayerHeight         44
+#define photoHeight              235
+#define OVERLAY_TAG              3234234
 static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 
-@implementation MWPhotoBrowser
+@implementation MWPhotoBrowser{
+    
+    UIImageView* _backgroundImageView;
+}
 
 #pragma mark - Init
 
@@ -40,6 +48,14 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 		_fixedPhotosArray = photosArray;
 	}
 	return self;
+}
+
+- (id)initWithAnghamiPhotos:(NSArray *)anghamiPhotos{
+    
+    if ((self = [self init])) {
+        _anghamiPhotos = anghamiPhotos;
+    }
+    return self;
 }
 
 - (id)initWithCoder:(NSCoder *)decoder {
@@ -81,7 +97,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     _currentGridContentOffset = CGPointMake(0, CGFLOAT_MAX);
     _didSavePreviousStateOfNavBar = NO;
     self.automaticallyAdjustsScrollViewInsets = NO;
-    
     // Listen for MWPhoto notifications
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleMWPhotoLoadingDidEndNotification:)
@@ -138,12 +153,13 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     // Validate grid settings
     if (_startOnGrid) _enableGrid = YES;
     if (_enableGrid) {
-        _enableGrid = [_delegate respondsToSelector:@selector(photoBrowser:thumbPhotoAtIndex:)];
+        // anghami photos implement the thumb delegate here.
+        if(!_anghamiPhotos)
+            _enableGrid = [_delegate respondsToSelector:@selector(photoBrowser:thumbPhotoAtIndex:)];
     }
     if (!_enableGrid) _startOnGrid = NO;
 	
-	// View
-	self.view.backgroundColor = [UIColor blackColor];
+    self.view.backgroundColor = [UIColor colorWithHexString:@"ececee"];
     self.view.clipsToBounds = YES;
 	
 	// Setup paging scrolling view
@@ -154,18 +170,21 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 	_pagingScrollView.delegate = self;
 	_pagingScrollView.showsHorizontalScrollIndicator = NO;
 	_pagingScrollView.showsVerticalScrollIndicator = NO;
-	_pagingScrollView.backgroundColor = [UIColor blackColor];
+    _pagingScrollView.backgroundColor = [UIColor colorWithHexString:@"ececee"];
     _pagingScrollView.contentSize = [self contentSizeForPagingScrollView];
 	[self.view addSubview:_pagingScrollView];
 	
-    // Toolbar
+    // View background
+    if (_overrideBackground) {
+        [self setNewBackground];
+    }
+    
+    // Toolbar not added when u plce items on right bar.
     _toolbar = [[UIToolbar alloc] initWithFrame:[self frameForToolbarAtOrientation:self.interfaceOrientation]];
-    _toolbar.tintColor = [UIColor whiteColor];
-    _toolbar.barTintColor = nil;
     [_toolbar setBackgroundImage:nil forToolbarPosition:UIToolbarPositionAny barMetrics:UIBarMetricsDefault];
     [_toolbar setBackgroundImage:nil forToolbarPosition:UIToolbarPositionAny barMetrics:UIBarMetricsLandscapePhone];
-    _toolbar.barStyle = UIBarStyleBlackTranslucent;
     _toolbar.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;
+    
     
     // Toolbar Items
     if (self.displayNavArrows) {
@@ -246,7 +265,14 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     } else {
         [items addObject:fixedSpace];
     }
-
+    
+    if (_placeToolBarItemsOnRightBar) {
+        if(_actionButton)
+            [items addObject:_actionButton];
+        self.navigationItem.rightBarButtonItems= items;
+        goto CUSTOMSKIP;
+    }
+    
     // Middle - Nav
     if (_previousButton && _nextButton && numberOfPhotos > 1) {
         hasItems = YES;
@@ -269,6 +295,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         [items addObject:fixedSpace];
     }
 
+  
     // Toolbar visibility
     [_toolbar setItems:items];
     BOOL hideToolbar = YES;
@@ -278,19 +305,64 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             break;
         }
     }
+    
+    
     if (hideToolbar) {
         [_toolbar removeFromSuperview];
     } else {
         [self.view addSubview:_toolbar];
     }
     
+    CUSTOMSKIP:
     // Update nav
 	[self updateNavigation];
     
     // Content offset
 	_pagingScrollView.contentOffset = [self contentOffsetForPageAtIndex:_currentPageIndex];
     [self tilePages];
+    
     _performingLayout = NO;
+    
+    
+}
+
+- (void)setNewBackground{
+    self.view.backgroundColor= [UIColor clearColor];
+    _pagingScrollView.backgroundColor = [UIColor clearColor];
+    
+    // Added ImageView
+    _backgroundImageView = [UIImageView new];
+    _backgroundImageView.frame = self.view.bounds;
+    _backgroundImageView.backgroundColor = [UIColor colorWithHexString:@"ececee"];
+    [self.view insertSubview:_backgroundImageView atIndex:0];
+    
+    // Gradient
+    CAGradientLayer* gradient = [CAGradientLayer layer];
+    gradient.frame =_backgroundImageView.bounds;
+    gradient.colors = @[(id)[[UIColor blackColor] CGColor], (id)[[UIColor blackColor] CGColor],(id)[[UIColor clearColor] CGColor],  (id)[[UIColor blackColor] CGColor],(id)[[UIColor blackColor] CGColor]];
+    gradient.opacity= 0.5;
+    [_backgroundImageView.layer insertSublayer:gradient atIndex:0];
+}
+
+- (void)addArtistOverlay:(Artist *)artist{
+    if(!artist)
+        return;
+    
+    ANGArtistOverlayView *overlay = (ANGArtistOverlayView *) [self.view viewWithTag:OVERLAY_TAG];
+    
+    if (!overlay){
+        overlay = [[ANGArtistOverlayView alloc] initWithArtist:artist];
+        overlay.y = self.view.y + self.navigationController.navigationBar.height * 1.5;
+        overlay.x = 11;
+        overlay.width = self.view.width;
+        overlay.hideByLabel = YES;
+        overlay.tag = OVERLAY_TAG;
+        [self.view addSubview:overlay];
+    }
+    else{
+        if(![overlay.artist.artistId isEqualToString:artist.artistId])
+            overlay.artist = artist;
+    }
     
 }
 
@@ -332,26 +404,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
 	// Super
 	[super viewWillAppear:animated];
-    
-    // Status bar
-    if (!_viewHasAppearedInitially) {
-        _leaveStatusBarAlone = [self presentingViewControllerPrefersStatusBarHidden];
-        // Check if status bar is hidden on first appear, and if so then ignore it
-        if (CGRectEqualToRect([[UIApplication sharedApplication] statusBarFrame], CGRectZero)) {
-            _leaveStatusBarAlone = YES;
-        }
-    }
-    // Set style
-    if (!_leaveStatusBarAlone && UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
-        _previousStatusBarStyle = [[UIApplication sharedApplication] statusBarStyle];
-        [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleLightContent animated:animated];
-    }
-    
-    // Navigation bar appearance
-    if (!_viewIsActive && [self.navigationController.viewControllers objectAtIndex:0] != self) {
-        [self storePreviousNavBarAppearance];
-    }
-    [self setNavBarAppearance:animated];
     
     // Update UI
 	[self hideControlsAfterDelay];
@@ -400,21 +452,12 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         
         // State
         _viewIsActive = NO;
-        
-        // Bar state / appearance
-        [self restorePreviousNavBarAppearance:animated];
-        
     }
     
     // Controls
     [self.navigationController.navigationBar.layer removeAllAnimations]; // Stop all animations on nav bar
     [NSObject cancelPreviousPerformRequestsWithTarget:self]; // Cancel any pending toggles from taps
     [self setControlsHidden:NO animated:NO permanent:YES];
-    
-    // Status bar
-    if (!_leaveStatusBarAlone && UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
-        [[UIApplication sharedApplication] setStatusBarStyle:_previousStatusBarStyle animated:animated];
-    }
     
 	// Super
 	[super viewWillDisappear:animated];
@@ -431,49 +474,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     if (!parent) _hasBelongedToViewController = YES;
 }
 
-#pragma mark - Nav Bar Appearance
 
-- (void)setNavBarAppearance:(BOOL)animated {
-    [self.navigationController setNavigationBarHidden:NO animated:animated];
-    UINavigationBar *navBar = self.navigationController.navigationBar;
-    navBar.tintColor = [UIColor whiteColor];
-    navBar.barTintColor = nil;
-    navBar.shadowImage = nil;
-    navBar.translucent = YES;
-    navBar.barStyle = UIBarStyleBlackTranslucent;
-    [navBar setBackgroundImage:nil forBarMetrics:UIBarMetricsDefault];
-    [navBar setBackgroundImage:nil forBarMetrics:UIBarMetricsLandscapePhone];
-}
-
-- (void)storePreviousNavBarAppearance {
-    _didSavePreviousStateOfNavBar = YES;
-    _previousNavBarBarTintColor = self.navigationController.navigationBar.barTintColor;
-    _previousNavBarTranslucent = self.navigationController.navigationBar.translucent;
-    _previousNavBarTintColor = self.navigationController.navigationBar.tintColor;
-    _previousNavBarHidden = self.navigationController.navigationBarHidden;
-    _previousNavBarStyle = self.navigationController.navigationBar.barStyle;
-    _previousNavigationBarBackgroundImageDefault = [self.navigationController.navigationBar backgroundImageForBarMetrics:UIBarMetricsDefault];
-    _previousNavigationBarBackgroundImageLandscapePhone = [self.navigationController.navigationBar backgroundImageForBarMetrics:UIBarMetricsLandscapePhone];
-}
-
-- (void)restorePreviousNavBarAppearance:(BOOL)animated {
-    if (_didSavePreviousStateOfNavBar) {
-        [self.navigationController setNavigationBarHidden:_previousNavBarHidden animated:animated];
-        UINavigationBar *navBar = self.navigationController.navigationBar;
-        navBar.tintColor = _previousNavBarTintColor;
-        navBar.translucent = _previousNavBarTranslucent;
-        navBar.barTintColor = _previousNavBarBarTintColor;
-        navBar.barStyle = _previousNavBarStyle;
-        [navBar setBackgroundImage:_previousNavigationBarBackgroundImageDefault forBarMetrics:UIBarMetricsDefault];
-        [navBar setBackgroundImage:_previousNavigationBarBackgroundImageLandscapePhone forBarMetrics:UIBarMetricsLandscapePhone];
-        // Restore back button if we need to
-        if (_previousViewControllerBackButton) {
-            UIViewController *previousViewController = [self.navigationController topViewController]; // We've disappeared so previous is now top
-            previousViewController.navigationItem.backBarButtonItem = _previousViewControllerBackButton;
-            _previousViewControllerBackButton = nil;
-        }
-    }
-}
 
 #pragma mark - Layout
 
@@ -575,7 +576,12 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
     // Layout
     [self layoutVisiblePages];
-	
+    
+    // reset overlay
+    ANGArtistOverlayView *overlay = (ANGArtistOverlayView *) [self.view viewWithTag:OVERLAY_TAG];
+    [overlay removeFromSuperview];
+    overlay = nil;
+    [self addArtistOverlay:[self artistForPhotoAtIndex:_currentPageIndex]];
 }
 
 - (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
@@ -585,6 +591,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         self.navigationController.navigationBarHidden = NO;
         self.navigationController.navigationBar.alpha = 0;
     }
+   
 }
 
 #pragma mark - Data
@@ -632,7 +639,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             _photoCount = [_delegate numberOfPhotosInPhotoBrowser:self];
         } else if (_fixedPhotosArray) {
             _photoCount = _fixedPhotosArray.count;
-        }
+        }else if(_anghamiPhotos)
+            _photoCount = _anghamiPhotos.count;
     }
     if (_photoCount == NSNotFound) _photoCount = 0;
     return _photoCount;
@@ -646,6 +654,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
                 photo = [_delegate photoBrowser:self photoAtIndex:index];
             } else if (_fixedPhotosArray && index < _fixedPhotosArray.count) {
                 photo = [_fixedPhotosArray objectAtIndex:index];
+            }
+            else if(_anghamiPhotos && index<_anghamiPhotos.count){
+                photo = [MWPhoto photoWithURL:[NSURL URLWithString:((Photo*)_anghamiPhotos[index]).imageURL]];
             }
             if (photo) [_photos replaceObjectAtIndex:index withObject:photo];
         } else {
@@ -662,6 +673,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             if ([_delegate respondsToSelector:@selector(photoBrowser:thumbPhotoAtIndex:)]) {
                 photo = [_delegate photoBrowser:self thumbPhotoAtIndex:index];
             }
+            else if(_anghamiPhotos && index<_anghamiPhotos.count)
+                photo = [MWPhoto photoWithURL:[NSURL URLWithString:((Photo*)_anghamiPhotos[index]).thumbnailURL]];
+            
             if (photo) [_thumbPhotos replaceObjectAtIndex:index withObject:photo];
         } else {
             photo = [_thumbPhotos objectAtIndex:index];
@@ -676,12 +690,37 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         captionView = [_delegate photoBrowser:self captionViewForPhotoAtIndex:index];
     } else {
         id <MWPhoto> photo = [self photoAtIndex:index];
-        if ([photo respondsToSelector:@selector(caption)]) {
+        if(_anghamiPhotos){
+            captionView = [[MWCaptionView alloc] initWithCaption:[(Photo *)_anghamiPhotos[index] caption]];
+        }
+        else if ([photo respondsToSelector:@selector(caption)]) {
             if ([photo caption]) captionView = [[MWCaptionView alloc] initWithPhoto:photo];
+            captionView.maxHeight = (self.view.height - photoHeight) /2 - miniPlayerHeight;
         }
     }
     captionView.alpha = [self areControlsHidden] ? 0 : 1; // Initial alpha
     return captionView;
+}
+
+- (Artist *) artistForPhotoAtIndex:(NSUInteger)index{
+    
+    Artist* anArtist = nil;
+    if (index < _photos.count) {
+        if ([_delegate respondsToSelector:@selector(artistForPhotoAtIndex:)]) {
+            anArtist = [_delegate artistForPhotoAtIndex:index];
+        }
+        else if(_anghamiPhotos){
+            Photo* aPhoto = _anghamiPhotos[index];
+            Artist* anArtist= [[Artist alloc] initWithAttributeDict:@{
+                                                                      @"name" :  aPhoto.artistName,
+                                                                      @"id" : aPhoto.artistID,
+                                                                      @"ArtistArt": aPhoto.artistArt
+                                                                      }];
+            return anArtist;
+        }
+    }
+    return anArtist;
+
 }
 
 - (BOOL)photoIsSelectedAtIndex:(NSUInteger)index {
@@ -706,6 +745,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 	if (photo) {
 		// Get image or obtain in background
 		if ([photo underlyingImage]) {
+            _backgroundImageView.image = [photo underlyingImage];
+            [_backgroundImageView blurMyImage];
 			return [photo underlyingImage];
 		} else {
             [photo loadUnderlyingImageAndNotify];
@@ -747,6 +788,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     MWZoomingScrollView *page = [self pageDisplayingPhoto:photo];
     if (page) {
         if ([photo underlyingImage]) {
+            _backgroundImageView.image = [photo underlyingImage];
+            [_backgroundImageView blurMyImage];
             // Successful load
             [page displayImage];
             [self loadAdjacentPhotosIfNecessary:photo];
@@ -951,6 +994,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         [self loadAdjacentPhotosIfNecessary:currentPhoto];
     }
     
+    // load the overlay
+    [self addArtistOverlay:[self artistForPhotoAtIndex:index]];
+    
     // Notify delegate
     if (index != _previousPageIndex) {
         if ([_delegate respondsToSelector:@selector(photoBrowser:didDisplayPhotoAtIndex:)])
@@ -1007,7 +1053,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     CGRect pageFrame = [self frameForPageAtIndex:index];
     CGSize captionSize = [captionView sizeThatFits:CGSizeMake(pageFrame.size.width, 0)];
     CGRect captionFrame = CGRectMake(pageFrame.origin.x,
-                                     pageFrame.size.height - captionSize.height - (_toolbar.superview?_toolbar.frame.size.height:0),
+                                     pageFrame.size.height - captionSize.height - miniPlayerHeight,
                                      pageFrame.size.width,
                                      captionSize.height);
     return CGRectIntegral(captionFrame);
@@ -1285,6 +1331,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 
     if (_gridController) return;
     
+    if(_placeToolBarItemsOnRightBar)
+        self.navigationItem.rightBarButtonItems = nil;
+    
     // Init grid controller
     _gridController = [[MWGridViewController alloc] init];
     _gridController.initialContentOffset = _currentGridContentOffset;
@@ -1333,6 +1382,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
     if (!_gridController) return;
     
+    if(_placeToolBarItemsOnRightBar)
+        [self performLayout];
+
     // Remember previous content offset
     _currentGridContentOffset = _gridController.collectionView.contentOffset;
     
@@ -1563,6 +1615,11 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             // Let delegate handle things
             [self.delegate photoBrowser:self actionButtonPressedForPhotoAtIndex:_currentPageIndex];
             
+        } else if(_anghamiPhotos){
+            [appDelegateS shareImageOrText:@{
+                                             @"image" : n2blank([(Photo *) _anghamiPhotos[_currentPageIndex] imageURL]),
+                                             @"text" : n2blank([(Photo *) _anghamiPhotos[_currentPageIndex] caption])
+                                             }];
         } else {
             
             // Show activity view controller
@@ -1582,7 +1639,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             });
 
             // Show
-            typeof(self) __weak weakSelf = self;
+            __typeof__(self) __weak weakSelf = self;
             [self.activityViewController setCompletionHandler:^(NSString *activityType, BOOL completed) {
                 weakSelf.activityViewController = nil;
                 [weakSelf hideControlsAfterDelay];
