@@ -20,6 +20,9 @@
 #define miniPlayerHeight         44
 #define photoHeight              235
 #define OVERLAY_TAG              3234234
+
+
+
 static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 
 @implementation MWPhotoBrowser{
@@ -150,6 +153,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 // Implement viewDidLoad to do additional setup after loading the view, typically from a nib.
 - (void)viewDidLoad {
     
+    // grid always unloaded at first
+    _gridController = nil;
+    
     // Validate grid settings
     if (_startOnGrid) _enableGrid = YES;
     if (_enableGrid) {
@@ -184,19 +190,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     [_toolbar setBackgroundImage:nil forToolbarPosition:UIToolbarPositionAny barMetrics:UIBarMetricsDefault];
     [_toolbar setBackgroundImage:nil forToolbarPosition:UIToolbarPositionAny barMetrics:UIBarMetricsLandscapePhone];
     _toolbar.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;
-    
-    
-    // Toolbar Items
-    if (self.displayNavArrows) {
-        NSString *arrowPathFormat = @"MWPhotoBrowser.bundle/UIBarButtonItemArrow%@";
-        UIImage *previousButtonImage = [UIImage imageForResourcePath:[NSString stringWithFormat:arrowPathFormat, @"Left"] ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]];
-        UIImage *nextButtonImage = [UIImage imageForResourcePath:[NSString stringWithFormat:arrowPathFormat, @"Right"] ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]];
-        _previousButton = [[UIBarButtonItem alloc] initWithImage:previousButtonImage style:UIBarButtonItemStylePlain target:self action:@selector(gotoPreviousPage)];
-        _nextButton = [[UIBarButtonItem alloc] initWithImage:nextButtonImage style:UIBarButtonItemStylePlain target:self action:@selector(gotoNextPage)];
-    }
-    if (self.displayActionButton) {
-        _actionButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction target:self action:@selector(actionButtonPressed:)];
-    }
     
     // Update
     [self reloadData];
@@ -250,24 +243,37 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         _previousViewControllerBackButton = previousViewController.navigationItem.backBarButtonItem; // remember previous
         previousViewController.navigationItem.backBarButtonItem = newBackButton;
     }
-
+    
+    // Toolbar Items, next and previous
+    if (self.displayNavArrows) {
+        UIImage *previousButtonImage = [UIImage imageNamed:@"UIBarButtonItemArrowLeft"];
+        UIImage *nextButtonImage = [UIImage imageNamed:@"UIBarButtonItemArrowRight"];
+        _previousButton = [[UIBarButtonItem alloc] initWithImage:previousButtonImage style:UIBarButtonItemStylePlain target:self action:@selector(gotoPreviousPage)];
+        _nextButton = [[UIBarButtonItem alloc] initWithImage:nextButtonImage style:UIBarButtonItemStylePlain target:self action:@selector(gotoNextPage)];
+    }
+    // ToolBar item, Action Button
+    if (self.displayActionButton) {
+        _actionButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction
+                                                                      target:self action:@selector(actionButtonPressed:)];
+    }
+    
     // Toolbar items
     BOOL hasItems = NO;
     UIBarButtonItem *fixedSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFixedSpace target:self action:nil];
     fixedSpace.width = 32; // To balance action button
     UIBarButtonItem *flexSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:self action:nil];
     NSMutableArray *items = [[NSMutableArray alloc] init];
-
+    
     // Left button - Grid
     if (_enableGrid) {
         hasItems = YES;
-        [items addObject:[[UIBarButtonItem alloc] initWithImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/UIBarButtonItemGrid" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] style:UIBarButtonItemStylePlain target:self action:@selector(showGridAnimated)]];
+        [items addObject:[[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:@"UIBarButtonItemGrid"]style:UIBarButtonItemStylePlain target:self action:@selector(showGridAnimated)]];
     } else {
         [items addObject:fixedSpace];
     }
     
     if (_placeToolBarItemsOnRightBar) {
-        if(_actionButton)
+        if(!_gridController && _actionButton)
             [items addObject:_actionButton];
         self.navigationItem.rightBarButtonItems= items;
         goto CUSTOMSKIP;
@@ -865,8 +871,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             // Add play button if needed
             if (page.displayingVideo) {
                 UIButton *playButton = [UIButton buttonWithType:UIButtonTypeCustom];
-                [playButton setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/PlayButtonOverlayLarge" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateNormal];
-                [playButton setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/PlayButtonOverlayLargeTap" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateHighlighted];
+                [playButton setImage:[UIImage imageNamed:@"PlayButtonOverlayLarge"] forState:UIControlStateNormal];
+                [playButton setImage:[UIImage imageNamed:@"PlayButtonOverlayLargeTap"] forState:UIControlStateHighlighted];
                 [playButton addTarget:self action:@selector(playButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
                 [playButton sizeToFit];
                 playButton.frame = [self frameForPlayButton:playButton atIndex:index];
@@ -877,12 +883,12 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             // Add selected button
             if (self.displaySelectionButtons) {
                 UIButton *selectedButton = [UIButton buttonWithType:UIButtonTypeCustom];
-                [selectedButton setImage:[UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageSelectedOff" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]] forState:UIControlStateNormal];
+                [selectedButton setImage:[UIImage imageNamed:@"ImageSelectedOff"] forState:UIControlStateNormal];
                 UIImage *selectedOnImage;
                 if (self.customImageSelectedIconName) {
                     selectedOnImage = [UIImage imageNamed:self.customImageSelectedIconName];
                 } else {
-                    selectedOnImage = [UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageSelectedOn" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]];
+                    selectedOnImage = [UIImage imageNamed:@"ImageSelectedOn"];
                 }
                 [selectedButton setImage:selectedOnImage forState:UIControlStateSelected];
                 [selectedButton sizeToFit];
@@ -1333,10 +1339,10 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 
 - (void)showGrid:(BOOL)animated {
 
-    if (_gridController) return;
-    
-    if(_placeToolBarItemsOnRightBar)
-        self.navigationItem.rightBarButtonItems = nil;
+    if (_gridController){
+        [self hideGrid];
+        return;
+    }
     
     // Init grid controller
     _gridController = [[MWGridViewController alloc] init];
@@ -1365,6 +1371,12 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         _gridPreviousRightNavItem = nil;
     }
     
+    // update navigation bar items.
+    if(_placeToolBarItemsOnRightBar){
+        self.navigationItem.rightBarButtonItems = nil;
+        [self performLayout];
+    }
+    
     // Update
     [self updateNavigation];
     [self setControlsHidden:NO animated:YES permanent:YES];
@@ -1379,16 +1391,12 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     } completion:^(BOOL finished) {
         [_gridController didMoveToParentViewController:self];
     }];
-    
 }
 
 - (void)hideGrid {
     
     if (!_gridController) return;
     
-    if(_placeToolBarItemsOnRightBar)
-        [self performLayout];
-
     // Remember previous content offset
     _currentGridContentOffset = _gridController.collectionView.contentOffset;
     
@@ -1406,6 +1414,12 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     MWGridViewController *tmpGridController = _gridController;
     _gridController = nil;
     
+    // update navigation bar items.
+    if(_placeToolBarItemsOnRightBar){
+        self.navigationItem.rightBarButtonItems = nil;
+        [self performLayout];
+    }
+    
     // Update
     [self updateNavigation];
     [self updateVisiblePageStates];
@@ -1420,7 +1434,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         [tmpGridController removeFromParentViewController];
         [self setControlsHidden:NO animated:YES permanent:NO]; // retrigger timer
     }];
-
+    
 }
 
 #pragma mark - Control Hiding / Showing
