@@ -344,9 +344,10 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
     // Added ImageView
     _backgroundImageView = [UIImageView new];
-    _backgroundImageView.frame = self.view.bounds;
     _backgroundImageView.backgroundColor = [UIColor colorWithHexString:@"ececee"];
+    _backgroundImageView.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view insertSubview:_backgroundImageView atIndex:0];
+    [_backgroundImageView autolayoutFillSuperview];
     
     // Gradient
     CAGradientLayer* gradient = [CAGradientLayer layer];
@@ -364,13 +365,14 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     ANGArtistOverlayView *overlay = (ANGArtistOverlayView *) [self.view viewWithTag:OVERLAY_TAG];
     
     if (!overlay){
-        overlay = [[ANGArtistOverlayView alloc] initWithArtist:artist];
-        overlay.y = self.view.y + self.navigationController.navigationBar.height * 1.5;
-        overlay.x = 11;
-        overlay.width = self.view.width;
-        overlay.hideByLabel = YES;
+        overlay = [[ANGArtistOverlayView alloc] initWithArtist:artist andHideByLabel:YES];
+        overlay.translatesAutoresizingMaskIntoConstraints = NO;
         overlay.tag = OVERLAY_TAG;
         [self.view addSubview:overlay];
+        
+        [overlay autolayoutWidthProportionalToParentWidth:1 constant:0];
+        [overlay autolayoutPinEdge:NSLayoutAttributeLeft toParentEdge:NSLayoutAttributeLeft constant:8];
+        [overlay autolayoutPinEdge:NSLayoutAttributeTop toParentEdge:NSLayoutAttributeTop constant:self.navigationController.navigationBar.height*1.5];
     }
     else{
         if(![overlay.artist.artistId isEqualToString:artist.artistId])
