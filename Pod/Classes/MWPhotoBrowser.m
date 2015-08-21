@@ -28,7 +28,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 @implementation MWPhotoBrowser{
     
     UIImageView* _backgroundImageView;
+    BOOL _scrollViewIsDragging;
 }
+
 
 #pragma mark - Init
 
@@ -202,7 +204,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         swipeGesture.direction = UISwipeGestureRecognizerDirectionDown | UISwipeGestureRecognizerDirectionUp;
         [self.view addGestureRecognizer:swipeGesture];
     }
-    
+    [self addArtistOverlay:[self artistForPhotoAtIndex:_currentPageIndex]];
+
 	// Super
     [super viewDidLoad];
 	
@@ -355,6 +358,14 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     gradient.colors = @[(id)[[UIColor blackColor] CGColor], (id)[[UIColor blackColor] CGColor],(id)[[UIColor clearColor] CGColor],  (id)[[UIColor blackColor] CGColor],(id)[[UIColor blackColor] CGColor]];
     gradient.opacity= 0.5;
     [_backgroundImageView.layer insertSublayer:gradient atIndex:0];
+}
+
+- (void)setBackgroundBlurredImage:(UIImage *)myImage{
+    
+    if(!_backgroundImageView)
+        return;
+    _backgroundImageView.image = myImage;
+    [_backgroundImageView blurMyImage];
 }
 
 - (void)addArtistOverlay:(Artist *)artist{
@@ -514,7 +525,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
 	// Frame needs changing
     if (!_skipNextPagingScrollViewPositioning) {
-        _pagingScrollView.frame = pagingScrollViewFrame;
+        if (!CGRectEqualToRect(_pagingScrollView.frame, pagingScrollViewFrame)) {
+            _pagingScrollView.frame = pagingScrollViewFrame;
+        }
     }
     _skipNextPagingScrollViewPositioning = NO;
 	
@@ -548,7 +561,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     [self positionVideoLoadingIndicator];
 	
 	// Adjust contentOffset to preserve page location based on values collected prior to location
-	_pagingScrollView.contentOffset = [self contentOffsetForPageAtIndex:indexPriorToLayout];
+    if (!_scrollViewIsDragging) {
+        _pagingScrollView.contentOffset = [self contentOffsetForPageAtIndex:indexPriorToLayout];
+    }
 	[self didStartViewingPageAtIndex:_currentPageIndex]; // initial
     
 	// Reset
@@ -767,9 +782,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 	if (photo) {
 		// Get image or obtain in background
 		if ([photo underlyingImage]) {
-            _backgroundImageView.image = [photo underlyingImage];
-            [_backgroundImageView blurMyImage];
-			return [photo underlyingImage];
+            return [photo underlyingImage];
 		} else {
             [photo loadUnderlyingImageAndNotify];
 		}
@@ -810,9 +823,11 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     MWZoomingScrollView *page = [self pageDisplayingPhoto:photo];
     if (page) {
         if ([photo underlyingImage]) {
-            _backgroundImageView.image = [photo underlyingImage];
-            [_backgroundImageView blurMyImage];
             // Successful load
+            if(page.index == _currentPageIndex){
+                if(_pagingScrollView && !_scrollViewIsDragging)
+                [self setBackgroundBlurredImage:[photo underlyingImage]];
+            }
             [page displayImage];
             [self loadAdjacentPhotosIfNecessary:photo];
         } else {
@@ -839,7 +854,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     if (iFirstIndex > [self numberOfPhotos] - 1) iFirstIndex = [self numberOfPhotos] - 1;
     if (iLastIndex < 0) iLastIndex = 0;
     if (iLastIndex > [self numberOfPhotos] - 1) iLastIndex = [self numberOfPhotos] - 1;
-	
+    
 	// Recycle no longer needed pages
     NSInteger pageIndex;
 	for (MWZoomingScrollView *page in _visiblePages) {
@@ -1016,9 +1031,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         [self loadAdjacentPhotosIfNecessary:currentPhoto];
     }
     
-    // load the overlay
-    if(!_gridController)
-        [self addArtistOverlay:[self artistForPhotoAtIndex:index]];
     
     // Notify delegate
     if (index != _previousPageIndex) {
@@ -1107,35 +1119,56 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 
 #pragma mark - UIScrollView Delegate
 
+
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
-	
     // Checks
-	if (!_viewIsActive || _performingLayout || _rotating) return;
-	
-	// Tile pages
-	[self tilePages];
-	
-	// Calculate current page
-	CGRect visibleBounds = _pagingScrollView.bounds;
-	NSInteger index = (NSInteger)(floorf(CGRectGetMidX(visibleBounds) / CGRectGetWidth(visibleBounds)));
+    if (!_viewIsActive || _performingLayout || _rotating) return;
+    
+    // Tile pages
+    [self tilePages];
+    
+    // Calculate current page
+    CGRect visibleBounds = _pagingScrollView.bounds;
+    NSInteger index = (NSInteger)(floorf(CGRectGetMidX(visibleBounds) / CGRectGetWidth(visibleBounds)));
     if (index < 0) index = 0;
-	if (index > [self numberOfPhotos] - 1) index = [self numberOfPhotos] - 1;
-	NSUInteger previousCurrentPage = _currentPageIndex;
-	_currentPageIndex = index;
-	if (_currentPageIndex != previousCurrentPage) {
+    if (index > [self numberOfPhotos] - 1) index = [self numberOfPhotos] - 1;
+    NSUInteger previousCurrentPage = _currentPageIndex;
+    _currentPageIndex = index;
+    if (_currentPageIndex != previousCurrentPage) {
         [self didStartViewingPageAtIndex:index];
     }
-	
 }
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
 	// Hide controls when dragging begins
 	[self setControlsHidden:YES animated:YES permanent:NO];
+    _scrollViewIsDragging = YES;
+    
 }
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
 	// Update nav when page changes
 	[self updateNavigation];
+    [self trackPageChange];
+}
+
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate{
+    _scrollViewIsDragging = NO;
+    if(!decelerate)
+        [self trackPageChange];
+}
+
+
+- (void)trackPageChange{
+    
+    int pageindex= round(_pagingScrollView.contentOffset.x /[self frameForPagingScrollView].size.width);
+    if(pageindex == _currentPageIndex){
+        UIImage* blurred=[[self photoAtIndex:_currentPageIndex] underlyingImage];
+        if(blurred)
+            [self setBackgroundBlurredImage: blurred];
+        [self addArtistOverlay:[self artistForPhotoAtIndex:_currentPageIndex]];
+    }
+    
 }
 
 #pragma mark - Navigation
