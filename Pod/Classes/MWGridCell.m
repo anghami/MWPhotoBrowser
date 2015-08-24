@@ -113,7 +113,7 @@
 - (void)prepareForReuse {
     _photo = nil;
     _gridController = nil;
-    _imageView.image = nil;
+    _imageView.image = [ANGArtworkFactory defaultPhotoPlaceHolder];
     _loadingIndicator.progress = 0;
     _selectedButton.hidden = YES;
     [self hideImageFailure];

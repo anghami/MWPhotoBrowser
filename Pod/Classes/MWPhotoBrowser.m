@@ -17,8 +17,7 @@
 #import "Photo.h"
 
 #define PADDING                  10
-#define miniPlayerHeight         44
-#define photoHeight              235
+#define miniPlayerHeight         (!IS_IPAD()? 44 : 0)
 #define OVERLAY_TAG              3234234
 
 LOG_LEVEL_ANGHAMI_DEFAULT
@@ -29,6 +28,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
     UIImageView* _backgroundImageView;
     BOOL _scrollViewIsDragging;
+    CAGradientLayer* _gradient;
 }
 
 
@@ -215,12 +215,23 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
     // Setup
     _performingLayout = YES;
-    NSUInteger numberOfPhotos = [self numberOfPhotos];
     
 	// Setup pages
     [_visiblePages removeAllObjects];
     [_recycledPages removeAllObjects];
     
+    [self updateNavigationAndToolbar];
+    [self tilePages];
+    
+    // Content offset
+    _pagingScrollView.contentOffset = [self contentOffsetForPageAtIndex:_currentPageIndex];
+    _performingLayout = NO;
+    
+}
+
+- (void) updateNavigationAndToolbar{
+    
+    NSUInteger numberOfPhotos = [self numberOfPhotos];
     // Navigation buttons
     if ([self.navigationController.viewControllers objectAtIndex:0] == self) {
         // We're first on stack so show done button
@@ -273,7 +284,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     if (_enableGrid) {
         hasItems = YES;
         [items addObject:[[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:@"UIBarButtonItemGrid"]style:UIBarButtonItemStylePlain target:self action:@selector(showGridAnimated)]];
-       
+        
         DDLogVerbose(@"[%@] Added grid Button",THIS_FILE);
     } else {
         [items addObject:fixedSpace];
@@ -299,7 +310,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     } else {
         [items addObject:flexSpace];
     }
-
+    
     // Right - Action
     if (_actionButton && !(!hasItems && !self.navigationItem.rightBarButtonItem)) {
         [items addObject:_actionButton];
@@ -309,8 +320,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             self.navigationItem.rightBarButtonItem = _actionButton;
         [items addObject:fixedSpace];
     }
-
-  
+    
+    
     // Toolbar visibility
     [_toolbar setItems:items];
     BOOL hideToolbar = YES;
@@ -330,14 +341,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
     CUSTOMSKIP:
     // Update nav
-	[self updateNavigation];
-    
-    // Content offset
-	_pagingScrollView.contentOffset = [self contentOffsetForPageAtIndex:_currentPageIndex];
-    [self tilePages];
-    
-    _performingLayout = NO;
-    
+    [self updateNavigation];
     
 }
 
@@ -353,11 +357,11 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     [_backgroundImageView autolayoutFillSuperview];
     
     // Gradient
-    CAGradientLayer* gradient = [CAGradientLayer layer];
-    gradient.frame =_backgroundImageView.bounds;
-    gradient.colors = @[(id)[[UIColor blackColor] CGColor], (id)[[UIColor blackColor] CGColor],(id)[[UIColor clearColor] CGColor],  (id)[[UIColor blackColor] CGColor],(id)[[UIColor blackColor] CGColor]];
-    gradient.opacity= 0.5;
-    [_backgroundImageView.layer insertSublayer:gradient atIndex:0];
+    _gradient = [CAGradientLayer layer];
+    _gradient.frame =self.view.bounds;
+    _gradient.colors = @[(id)[[UIColor blackColor] CGColor], (id)[[UIColor blackColor] CGColor],(id)[[UIColor clearColor] CGColor],  (id)[[UIColor blackColor] CGColor],(id)[[UIColor blackColor] CGColor]];
+    _gradient.opacity= 0.5;
+    [_backgroundImageView.layer insertSublayer:_gradient atIndex:0];
 }
 
 - (void)setBackgroundBlurredImage:(UIImage *)myImage{
@@ -614,6 +618,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         [overlay removeFromSuperview];
         overlay = nil;
         [self addArtistOverlay:[self artistForPhotoAtIndex:_currentPageIndex]];
+        _gradient.frame =self.view.bounds;
     }
 }
 
@@ -720,6 +725,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 }
 
 - (MWCaptionView *)captionViewForPhotoAtIndex:(NSUInteger)index {
+
     MWCaptionView *captionView = nil;
     if ([_delegate respondsToSelector:@selector(photoBrowser:captionViewForPhotoAtIndex:)]) {
         captionView = [_delegate photoBrowser:self captionViewForPhotoAtIndex:index];
@@ -730,7 +736,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         }
         else if ([photo respondsToSelector:@selector(caption)]) {
             if ([photo caption]) captionView = [[MWCaptionView alloc] initWithPhoto:photo];
-            captionView.maxHeight = (self.view.height - photoHeight) /2 - miniPlayerHeight;
         }
     }
     captionView.alpha = [self areControlsHidden] ? 0 : 1; // Initial alpha
@@ -748,9 +753,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         else if(_anghamiPhotos){
             Photo* aPhoto = _anghamiPhotos[index];
             Artist* anArtist= [[Artist alloc] initWithAttributeDict:@{
-                                                                      @"name" :  aPhoto.artistName,
-                                                                      @"id" : aPhoto.artistID,
-                                                                      @"ArtistArt": aPhoto.artistArt
+                                                                      @"name" :  n2blank(aPhoto.artistName),
+                                                                      @"id" : n2blank(aPhoto.artistID),
+                                                                      @"ArtistArt": n2blank(aPhoto.artistArt)
                                                                       }];
             return anArtist;
         }
@@ -1086,7 +1091,20 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 
 - (CGRect)frameForCaptionView:(MWCaptionView *)captionView atIndex:(NSUInteger)index {
     CGRect pageFrame = [self frameForPageAtIndex:index];
-    CGSize captionSize = [captionView sizeThatFits:CGSizeMake(pageFrame.size.width, 0)];
+    CGFloat photoHeight;
+    
+    if(DEVICE_IS_IPHONE_6)
+        photoHeight = 375;
+    else if (DEVICE_IS_IPHONE_5)
+        photoHeight = 320;
+    else if (DEVICE_IS_IPHONE_4)
+        photoHeight = 320;
+    if(DEVICE_IS_IPHONE_6_PLUS)
+        photoHeight = 500;
+    else photoHeight = 630;
+    
+    CGSize captionSize = CGSizeMake(pageFrame.size.width , (pageFrame.size.height - photoHeight) /2 - miniPlayerHeight);
+    captionView.size = captionSize;
     CGRect captionFrame = CGRectMake(pageFrame.origin.x,
                                      pageFrame.size.height - captionSize.height - miniPlayerHeight,
                                      pageFrame.size.width,
@@ -1422,7 +1440,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     // update navigation bar items.
     if(_placeToolBarItemsOnRightBar){
         self.navigationItem.rightBarButtonItems = nil;
-        [self performLayout];
+        [self updateNavigationAndToolbar];
     }
     
     // Update
@@ -1467,7 +1485,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     // update navigation bar items.
     if(_placeToolBarItemsOnRightBar){
         self.navigationItem.rightBarButtonItems = nil;
-        [self performLayout];
+        [self updateNavigationAndToolbar];
     }
     
     // Update
