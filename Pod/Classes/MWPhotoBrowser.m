@@ -117,6 +117,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     _pagingScrollView.delegate = nil;
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     [self releaseAllUnderlyingPhotos:NO];
+#warning This will almost definitely have adverse effects on image loading outside the library \
+         This is bad practice, should be using an image cache specific to MWPhotoBrowser
     [[SDImageCache sharedImageCache] clearMemory]; // clear memory
 }
 
