@@ -451,6 +451,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     // and the index changed, make sure we show the right one now
     if (_currentPageIndex != _pageIndexBeforeRotation) {
         [self jumpToPageAtIndex:_pageIndexBeforeRotation animated:NO];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self tilePages];
+        });
     }
 
 }
