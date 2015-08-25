@@ -1099,7 +1099,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         photoHeight = 320;
     else if (DEVICE_IS_IPHONE_4)
         photoHeight = 320;
-    if(DEVICE_IS_IPHONE_6_PLUS)
+    else if(DEVICE_IS_IPHONE_6_PLUS)
         photoHeight = 500;
     else photoHeight = 630;
     
