@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "MWPhotoProtocol.h"
 
-@interface MWCaptionView : UITextView
+@interface MWCaptionView : UILabel
 
 // Init
 - (id)initWithPhoto:(id<MWPhoto>)photo;
@@ -27,5 +27,10 @@
 // If you need more data per photo then simply subclass MWPhoto and return your
 // subclass to the photo browsers -photoBrowser:photoAtIndex: delegate method
 - (void)setupCaption;
+
+// Override -sizeThatFits: and return a CGSize specifying the height of your
+// custom caption view. With width property is ignored and the caption is displayed
+// the full width of the screen
+- (CGSize)sizeThatFits:(CGSize)size;
 
 @end

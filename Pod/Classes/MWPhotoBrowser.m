@@ -17,7 +17,6 @@
 #import "Photo.h"
 
 #define PADDING                  10
-#define miniPlayerHeight         (!IS_IPAD()? 44 : 0)
 #define OVERLAY_TAG              3234234
 
 LOG_LEVEL_ANGHAMI_DEFAULT
@@ -544,12 +543,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 	_pagingScrollView.contentSize = [self contentSizeForPagingScrollView];
 	
 	// Adjust frames and configuration of each visible page
-	for (MWZoomingScrollView *page in _visiblePages) {
+	for (MWImageAndCaptionScrollView *page in _visiblePages) {
         NSUInteger index = page.index;
 		page.frame = [self frameForPageAtIndex:index];
-        if (page.captionView) {
-            page.captionView.frame = [self frameForCaptionView:page.captionView atIndex:index];
-        }
         if (page.selectedButton) {
             page.selectedButton.frame = [self frameForSelectedButton:page.selectedButton atIndex:index];
         }
@@ -560,7 +556,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         // Adjust scales if bounds has changed since last time
         if (!CGRectEqualToRect(_previousLayoutBounds, self.view.bounds)) {
             // Update zooms for new bounds
-            [page setMaxMinZoomScalesForCurrentBounds];
             _previousLayoutBounds = self.view.bounds;
         }
 
@@ -743,8 +738,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             if ([photo caption]) captionView = [[MWCaptionView alloc] initWithPhoto:photo];
         }
     }
-    captionView.alpha = [self areControlsHidden] ? 0 : 1; // Initial alpha
     DDLogVerbose(@"[%@] returned caption %@",THIS_FILE,captionView);
+    captionView.size = [captionView sizeThatFits:[self frameForPageAtIndex:index].size];
     return captionView;
 }
 
@@ -801,7 +796,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 }
 
 - (void)loadAdjacentPhotosIfNecessary:(id<MWPhoto>)photo {
-    MWZoomingScrollView *page = [self pageDisplayingPhoto:photo];
+    MWImageAndCaptionScrollView *page = [self pageDisplayingPhoto:photo];
     if (page) {
         // If page is current page then initiate loading of previous and next pages
         NSUInteger pageIndex = page.index;
@@ -830,7 +825,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 
 - (void)handleMWPhotoLoadingDidEndNotification:(NSNotification *)notification {
     id <MWPhoto> photo = [notification object];
-    MWZoomingScrollView *page = [self pageDisplayingPhoto:photo];
+    MWImageAndCaptionScrollView *page = [self pageDisplayingPhoto:photo];
     if (page) {
         if ([photo underlyingImage]) {
             // Successful load
@@ -867,7 +862,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
 	// Recycle no longer needed pages
     NSInteger pageIndex;
-	for (MWZoomingScrollView *page in _visiblePages) {
+	for (MWImageAndCaptionScrollView *page in _visiblePages) {
         pageIndex = page.index;
 		if (pageIndex < (NSUInteger)iFirstIndex || pageIndex > (NSUInteger)iLastIndex) {
 			[_recycledPages addObject:page];
@@ -888,23 +883,17 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 		if (![self isDisplayingPageForIndex:index]) {
             
             // Add new page
-			MWZoomingScrollView *page = [self dequeueRecycledPage];
+			MWImageAndCaptionScrollView *page = [self dequeueRecycledPage];
 			if (!page) {
-				page = [[MWZoomingScrollView alloc] initWithPhotoBrowser:self];
+				page = [[MWImageAndCaptionScrollView alloc] initWithPhotoBrowser:self];
 			}
 			[_visiblePages addObject:page];
+            // Add caption too
 			[self configurePage:page forIndex:index];
 
 			[_pagingScrollView addSubview:page];
 			MWLog(@"Added page at index %lu", (unsigned long)index);
             
-            // Add caption
-            MWCaptionView *captionView = [self captionViewForPhotoAtIndex:index];
-            if (captionView) {
-                captionView.frame = [self frameForCaptionView:captionView atIndex:index];
-                [_pagingScrollView addSubview:captionView];
-                page.captionView = captionView;
-            }
             
             // Add play button if needed
             if (page.displayingVideo) {
@@ -945,7 +934,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 
 - (void)updateVisiblePageStates {
     NSSet *copy = [_visiblePages copy];
-    for (MWZoomingScrollView *page in copy) {
+    for (MWImageAndCaptionScrollView *page in copy) {
         
         // Update selection
         page.selectedButton.selected = [self photoIsSelectedAtIndex:page.index];
@@ -954,14 +943,14 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 }
 
 - (BOOL)isDisplayingPageForIndex:(NSUInteger)index {
-	for (MWZoomingScrollView *page in _visiblePages)
+	for (MWImageAndCaptionScrollView *page in _visiblePages)
 		if (page.index == index) return YES;
 	return NO;
 }
 
-- (MWZoomingScrollView *)pageDisplayedAtIndex:(NSUInteger)index {
-	MWZoomingScrollView *thePage = nil;
-	for (MWZoomingScrollView *page in _visiblePages) {
+- (MWImageAndCaptionScrollView *)pageDisplayedAtIndex:(NSUInteger)index {
+	MWImageAndCaptionScrollView *thePage = nil;
+	for (MWImageAndCaptionScrollView *page in _visiblePages) {
 		if (page.index == index) {
 			thePage = page; break;
 		}
@@ -969,9 +958,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 	return thePage;
 }
 
-- (MWZoomingScrollView *)pageDisplayingPhoto:(id<MWPhoto>)photo {
-	MWZoomingScrollView *thePage = nil;
-	for (MWZoomingScrollView *page in _visiblePages) {
+- (MWImageAndCaptionScrollView *)pageDisplayingPhoto:(id<MWPhoto>)photo {
+	MWImageAndCaptionScrollView *thePage = nil;
+	for (MWImageAndCaptionScrollView *page in _visiblePages) {
 		if (page.photo == photo) {
 			thePage = page; break;
 		}
@@ -979,14 +968,15 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 	return thePage;
 }
 
-- (void)configurePage:(MWZoomingScrollView *)page forIndex:(NSUInteger)index {
+- (void)configurePage:(MWImageAndCaptionScrollView *)page forIndex:(NSUInteger)index {
 	page.frame = [self frameForPageAtIndex:index];
     page.index = index;
+    page.captionView = [self captionViewForPhotoAtIndex:index];
     page.photo = [self photoAtIndex:index];
 }
 
-- (MWZoomingScrollView *)dequeueRecycledPage {
-	MWZoomingScrollView *page = [_recycledPages anyObject];
+- (MWImageAndCaptionScrollView *)dequeueRecycledPage {
+	MWImageAndCaptionScrollView *page = [_recycledPages anyObject];
 	if (page) {
 		[_recycledPages removeObject:page];
 	}
@@ -1094,28 +1084,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 	return CGRectIntegral(CGRectMake(0, self.view.bounds.size.height - height, self.view.bounds.size.width, height));
 }
 
-- (CGRect)frameForCaptionView:(MWCaptionView *)captionView atIndex:(NSUInteger)index {
-    CGRect pageFrame = [self frameForPageAtIndex:index];
-    CGFloat photoHeight;
-    
-    if(DEVICE_IS_IPHONE_6)
-        photoHeight = 375;
-    else if (DEVICE_IS_IPHONE_5)
-        photoHeight = 320;
-    else if (DEVICE_IS_IPHONE_4)
-        photoHeight = 320;
-    else if(DEVICE_IS_IPHONE_6_PLUS)
-        photoHeight = 500;
-    else photoHeight = 630;
-    
-    CGSize captionSize = CGSizeMake(pageFrame.size.width , (pageFrame.size.height - photoHeight) /2 - miniPlayerHeight);
-    captionView.size = captionSize;
-    CGRect captionFrame = CGRectMake(pageFrame.origin.x,
-                                     pageFrame.size.height - captionSize.height - miniPlayerHeight,
-                                     pageFrame.size.width,
-                                     captionSize.height);
-    return CGRectIntegral(captionFrame);
-}
 
 - (CGRect)frameForSelectedButton:(UIButton *)selectedButton atIndex:(NSUInteger)index {
     CGRect pageFrame = [self frameForPageAtIndex:index];
@@ -1273,7 +1241,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     UIButton *selectedButton = (UIButton *)sender;
     selectedButton.selected = !selectedButton.selected;
     NSUInteger index = NSUIntegerMax;
-    for (MWZoomingScrollView *page in _visiblePages) {
+    for (MWImageAndCaptionScrollView *page in _visiblePages) {
         if (page.selectedButton == selectedButton) {
             index = page.index;
             break;
@@ -1287,7 +1255,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 - (void)playButtonTapped:(id)sender {
     UIButton *playButton = (UIButton *)sender;
     NSUInteger index = NSUIntegerMax;
-    for (MWZoomingScrollView *page in _visiblePages) {
+    for (MWImageAndCaptionScrollView *page in _visiblePages) {
         if (page.playButton == playButton) {
             index = page.index;
             break;
@@ -1551,21 +1519,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     // Toolbar, nav bar and captions
     // Pre-appear animation positions for sliding
     if ([self areControlsHidden] && !hidden && animated) {
-        
         // Toolbar
         _toolbar.frame = CGRectOffset([self frameForToolbarAtOrientation:self.interfaceOrientation], 0, animatonOffset);
-        
-        // Captions
-        for (MWZoomingScrollView *page in _visiblePages) {
-            if (page.captionView) {
-                MWCaptionView *v = page.captionView;
-                // Pass any index, all we're interested in is the Y
-                CGRect captionFrame = [self frameForCaptionView:v atIndex:0];
-                captionFrame.origin.x = v.frame.origin.x; // Reset X
-                v.frame = CGRectOffset(captionFrame, 0, animatonOffset);
-            }
-        }
-        
     }
     [UIView animateWithDuration:animationDuration animations:^(void) {
         
@@ -1579,21 +1534,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         if (hidden) _toolbar.frame = CGRectOffset(_toolbar.frame, 0, animatonOffset);
         _toolbar.alpha = alpha;
 
-        // Captions
-        for (MWZoomingScrollView *page in _visiblePages) {
-            if (page.captionView) {
-                MWCaptionView *v = page.captionView;
-                // Pass any index, all we're interested in is the Y
-                CGRect captionFrame = [self frameForCaptionView:v atIndex:0];
-                captionFrame.origin.x = v.frame.origin.x; // Reset X
-                if (hidden) captionFrame = CGRectOffset(captionFrame, 0, animatonOffset);
-                v.frame = captionFrame;
-                v.alpha = alpha;
-            }
-        }
-        
+
         // Selected buttons
-        for (MWZoomingScrollView *page in _visiblePages) {
+        for (MWImageAndCaptionScrollView *page in _visiblePages) {
             if (page.selectedButton) {
                 UIButton *v = page.selectedButton;
                 CGRect newFrame = [self frameForSelectedButton:v atIndex:0];

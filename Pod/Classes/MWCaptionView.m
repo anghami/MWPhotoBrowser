@@ -42,15 +42,25 @@ static const CGFloat labelPadding = 10;
 }
 
 
+- (CGSize)sizeThatFits:(CGSize)size {
+    CGFloat maxHeight = 9999;
+    if (self.numberOfLines > 0) maxHeight = self.font.leading*self.numberOfLines;
+    CGSize textSize = [self.text boundingRectWithSize:CGSizeMake(size.width - labelPadding*2, maxHeight)
+                                                options:NSStringDrawingUsesLineFragmentOrigin
+                                             attributes:@{NSFontAttributeName:self.font}
+                                                context:nil].size;
+    return CGSizeMake(size.width, textSize.height + labelPadding * 2);
+}
+
 - (void)setupCaption {
     self.opaque = NO;
     self.backgroundColor = [UIColor clearColor];
     self.textAlignment = NSTextAlignmentLeft;
     self.textColor =  [UIColor whiteColor];
     self.userInteractionEnabled = YES;
-    self.editable = NO;
     self.font = IS_IPAD() ? [UIFont systemFontOfSize:17] :[UIFont systemFontOfSize:14];
-   
+    self.numberOfLines = 0;
+    
     if(_anghamiCaption)
         self.text = _anghamiCaption;
     else if ([_photo respondsToSelector:@selector(caption)]) {
@@ -58,6 +68,10 @@ static const CGFloat labelPadding = 10;
     }
 }
 
+- (void)drawTextInRect:(CGRect)rect {
+    UIEdgeInsets insets = {0, 5, 0, 5};
+    [super drawTextInRect:UIEdgeInsetsInsetRect(rect, insets)];
+}
 
 
 @end

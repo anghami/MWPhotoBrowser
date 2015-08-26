@@ -10,7 +10,7 @@
 #import <MBProgressHUD/MBProgressHUD.h>
 #import <MediaPlayer/MediaPlayer.h>
 #import "MWGridViewController.h"
-#import "MWZoomingScrollView.h"
+#import "MWImageAndCaptionScrollView.h"
 
 // Declare private methods of browser
 @interface MWPhotoBrowser () {
@@ -86,10 +86,10 @@
 // Paging
 - (void)tilePages;
 - (BOOL)isDisplayingPageForIndex:(NSUInteger)index;
-- (MWZoomingScrollView *)pageDisplayedAtIndex:(NSUInteger)index;
-- (MWZoomingScrollView *)pageDisplayingPhoto:(id<MWPhoto>)photo;
-- (MWZoomingScrollView *)dequeueRecycledPage;
-- (void)configurePage:(MWZoomingScrollView *)page forIndex:(NSUInteger)index;
+- (MWImageAndCaptionScrollView *)pageDisplayedAtIndex:(NSUInteger)index;
+- (MWImageAndCaptionScrollView *)pageDisplayingPhoto:(id<MWPhoto>)photo;
+- (MWImageAndCaptionScrollView *)dequeueRecycledPage;
+- (void)configurePage:(MWImageAndCaptionScrollView *)page forIndex:(NSUInteger)index;
 - (void)didStartViewingPageAtIndex:(NSUInteger)index;
 
 // Frames
@@ -98,7 +98,6 @@
 - (CGSize)contentSizeForPagingScrollView;
 - (CGPoint)contentOffsetForPageAtIndex:(NSUInteger)index;
 - (CGRect)frameForToolbarAtOrientation:(UIInterfaceOrientation)orientation;
-- (CGRect)frameForCaptionView:(MWCaptionView *)captionView atIndex:(NSUInteger)index;
 - (CGRect)frameForSelectedButton:(UIButton *)selectedButton atIndex:(NSUInteger)index;
 
 // Navigation
