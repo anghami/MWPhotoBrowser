@@ -43,16 +43,13 @@
 @interface MWPhotoBrowser : UIViewController <UIScrollViewDelegate, UIActionSheetDelegate>
 
 @property (nonatomic, weak) IBOutlet id<MWPhotoBrowserDelegate> delegate;
-@property (nonatomic) BOOL zoomPhotosToFill;
 @property (nonatomic) BOOL displayNavArrows;
 @property (nonatomic) BOOL displayActionButton;
 @property (nonatomic) BOOL displaySelectionButtons;
-@property (nonatomic) BOOL alwaysShowControls;
 @property (nonatomic) BOOL enableGrid;
 @property (nonatomic) BOOL enableSwipeToDismiss;
 @property (nonatomic) BOOL startOnGrid;
 @property (nonatomic) BOOL autoPlayOnAppear;
-@property (nonatomic) NSUInteger delayToHideElements;
 @property (nonatomic, readonly) NSUInteger currentIndex;
 @property (nonatomic) BOOL placeToolBarItemsOnRightBar;
 @property (nonatomic) BOOL overrideBackground;

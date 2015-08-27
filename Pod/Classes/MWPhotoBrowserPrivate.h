@@ -110,13 +110,6 @@
 - (void)showGrid:(BOOL)animated;
 - (void)hideGrid;
 
-// Controls
-- (void)cancelControlHiding;
-- (void)hideControlsAfterDelay;
-- (void)setControlsHidden:(BOOL)hidden animated:(BOOL)animated permanent:(BOOL)permanent;
-- (void)toggleControls;
-- (BOOL)areControlsHidden;
-
 // Data
 - (NSUInteger)numberOfPhotos;
 - (id<MWPhoto>)photoAtIndex:(NSUInteger)index;

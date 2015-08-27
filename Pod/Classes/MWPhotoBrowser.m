@@ -88,14 +88,12 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     _previousPageIndex = NSUIntegerMax;
     _displayActionButton = YES;
     _displayNavArrows = NO;
-    _zoomPhotosToFill = YES;
     _performingLayout = NO; // Reset on view did appear
     _rotating = NO;
     _viewIsActive = NO;
     _enableGrid = YES;
     _startOnGrid = NO;
     _enableSwipeToDismiss = YES;
-    _delayToHideElements = 5;
     _visiblePages = [[NSMutableSet alloc] init];
     _recycledPages = [[NSMutableSet alloc] init];
     _photos = [[NSMutableArray alloc] init];
@@ -436,8 +434,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 	// Super
 	[super viewWillAppear:animated];
     
-    // Update UI
-	[self hideControlsAfterDelay];
     
     // Initial appearance
     if (!_viewHasAppearedInitially) {
@@ -491,7 +487,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     // Controls
     [self.navigationController.navigationBar.layer removeAllAnimations]; // Stop all animations on nav bar
     [NSObject cancelPreviousPerformRequestsWithTarget:self]; // Cancel any pending toggles from taps
-    [self setControlsHidden:NO animated:NO permanent:YES];
     
 	// Super
 	[super viewWillDisappear:animated];
@@ -591,22 +586,12 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 	// Remember page index before rotation
 	_pageIndexBeforeRotation = _currentPageIndex;
 	_rotating = YES;
-    
-    // In iOS 7 the nav bar gets shown after rotation, but might as well do this for everything!
-    if ([self areControlsHidden]) {
-        // Force hidden
-        self.navigationController.navigationBarHidden = YES;
-    }
-	
 }
 
 - (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration {
 	
 	// Perform layout
 	_currentPageIndex = _pageIndexBeforeRotation;
-	
-	// Delay control holding
-	[self hideControlsAfterDelay];
     
     // Layout
     [self layoutVisiblePages];
@@ -624,12 +609,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 
 - (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
 	_rotating = NO;
-    // Ensure nav bar isn't re-displayed
-    if ([self areControlsHidden]) {
-        self.navigationController.navigationBarHidden = NO;
-        self.navigationController.navigationBar.alpha = 0;
-    }
-   
 }
 
 #pragma mark - Data
@@ -989,7 +968,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     // Handle 0 photos
     if (![self numberOfPhotos]) {
         // Show controls
-        [self setControlsHidden:NO animated:YES permanent:YES];
         return;
     }
     
@@ -1089,10 +1067,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     CGRect pageFrame = [self frameForPageAtIndex:index];
     CGFloat padding = 20;
     CGFloat yOffset = 0;
-    if (![self areControlsHidden]) {
-        UINavigationBar *navBar = self.navigationController.navigationBar;
-        yOffset = navBar.frame.origin.y + navBar.frame.size.height;
-    }
+    UINavigationBar *navBar = self.navigationController.navigationBar;
+    yOffset = navBar.frame.origin.y + navBar.frame.size.height;
+    
     CGRect selectedButtonFrame = CGRectMake(pageFrame.origin.x + pageFrame.size.width - selectedButton.frame.size.width - padding,
                                             padding + yOffset,
                                             selectedButton.frame.size.width,
@@ -1132,7 +1109,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
 	// Hide controls when dragging begins
-	[self setControlsHidden:YES animated:YES permanent:NO];
     _scrollViewIsDragging = YES;
     
 }
@@ -1214,10 +1190,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         [_pagingScrollView setContentOffset:CGPointMake(pageFrame.origin.x - PADDING, 0) animated:animated];
 		[self updateNavigation];
 	}
-	
-	// Update timer to give more time
-	[self hideControlsAfterDelay];
-	
 }
 
 - (void)gotoPreviousPage {
@@ -1418,7 +1390,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
     // Update
     [self updateNavigation];
-    [self setControlsHidden:NO animated:YES permanent:YES];
     
     // Animate grid in and photo scroller out
     [_gridController willMoveToParentViewController:self];
@@ -1473,123 +1444,10 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         [tmpGridController willMoveToParentViewController:nil];
         [tmpGridController.view removeFromSuperview];
         [tmpGridController removeFromParentViewController];
-        [self setControlsHidden:NO animated:YES permanent:NO]; // retrigger timer
     }];
     
 }
 
-#pragma mark - Control Hiding / Showing
-
-// If permanent then we don't set timers to hide again
-// Fades all controls on iOS 5 & 6, and iOS 7 controls slide and fade
-- (void)setControlsHidden:(BOOL)hidden animated:(BOOL)animated permanent:(BOOL)permanent {
-    
-    // Force visible
-    if (![self numberOfPhotos] || _gridController || _alwaysShowControls)
-        hidden = NO;
-    
-    // Cancel any timers
-    [self cancelControlHiding];
-    
-    // Animations & positions
-    CGFloat animatonOffset = 20;
-    CGFloat animationDuration = (animated ? 0.35 : 0);
-    
-    // Status bar
-    if (!_leaveStatusBarAlone) {
-
-        // Hide status bar
-        if (!_isVCBasedStatusBarAppearance) {
-            
-            // Non-view controller based
-            [[UIApplication sharedApplication] setStatusBarHidden:hidden withAnimation:animated ? UIStatusBarAnimationSlide : UIStatusBarAnimationNone];
-            
-        } else {
-            
-            // View controller based so animate away
-            _statusBarShouldBeHidden = hidden;
-            [UIView animateWithDuration:animationDuration animations:^(void) {
-                [self setNeedsStatusBarAppearanceUpdate];
-            } completion:^(BOOL finished) {}];
-            
-        }
-
-    }
-    
-    // Toolbar, nav bar and captions
-    // Pre-appear animation positions for sliding
-    if ([self areControlsHidden] && !hidden && animated) {
-        // Toolbar
-        _toolbar.frame = CGRectOffset([self frameForToolbarAtOrientation:self.interfaceOrientation], 0, animatonOffset);
-    }
-    [UIView animateWithDuration:animationDuration animations:^(void) {
-        
-        CGFloat alpha = hidden ? 0 : 1;
-
-        // Nav bar slides up on it's own on iOS 7+
-        [self.navigationController.navigationBar setAlpha:alpha];
-        
-        // Toolbar
-        _toolbar.frame = [self frameForToolbarAtOrientation:self.interfaceOrientation];
-        if (hidden) _toolbar.frame = CGRectOffset(_toolbar.frame, 0, animatonOffset);
-        _toolbar.alpha = alpha;
-
-
-        // Selected buttons
-        for (MWImageAndCaptionScrollView *page in _visiblePages) {
-            if (page.selectedButton) {
-                UIButton *v = page.selectedButton;
-                CGRect newFrame = [self frameForSelectedButton:v atIndex:0];
-                newFrame.origin.x = v.frame.origin.x;
-                v.frame = newFrame;
-            }
-        }
-
-    } completion:^(BOOL finished) {}];
-    
-	// Control hiding timer
-	// Will cancel existing timer but only begin hiding if
-	// they are visible
-	if (!permanent) [self hideControlsAfterDelay];
-	
-}
-
-- (BOOL)prefersStatusBarHidden {
-    if (!_leaveStatusBarAlone) {
-        return _statusBarShouldBeHidden;
-    } else {
-        return [self presentingViewControllerPrefersStatusBarHidden];
-    }
-}
-
-- (UIStatusBarStyle)preferredStatusBarStyle {
-    return UIStatusBarStyleLightContent;
-}
-
-- (UIStatusBarAnimation)preferredStatusBarUpdateAnimation {
-    return UIStatusBarAnimationSlide;
-}
-
-- (void)cancelControlHiding {
-	// If a timer exists then cancel and release
-	if (_controlVisibilityTimer) {
-		[_controlVisibilityTimer invalidate];
-		_controlVisibilityTimer = nil;
-	}
-}
-
-// Enable/disable control visiblity timer
-- (void)hideControlsAfterDelay {
-	if (![self areControlsHidden]) {
-        [self cancelControlHiding];
-		_controlVisibilityTimer = [NSTimer scheduledTimerWithTimeInterval:self.delayToHideElements target:self selector:@selector(hideControls) userInfo:nil repeats:NO];
-	}
-}
-
-- (BOOL)areControlsHidden { return (_toolbar.alpha == 0); }
-- (void)hideControls { [self setControlsHidden:YES animated:YES permanent:NO]; }
-- (void)showControls { [self setControlsHidden:NO animated:YES permanent:NO]; }
-- (void)toggleControls { [self setControlsHidden:![self areControlsHidden] animated:YES permanent:NO]; }
 
 #pragma mark - Properties
 
@@ -1676,7 +1534,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             __typeof__(self) __weak weakSelf = self;
             [self.activityViewController setCompletionHandler:^(NSString *activityType, BOOL completed) {
                 weakSelf.activityViewController = nil;
-                [weakSelf hideControlsAfterDelay];
                 [weakSelf hideProgressHUD:YES];
             }];
             // iOS 8 - Set the Anchor Point for the popover
@@ -1686,10 +1543,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             [self presentViewController:self.activityViewController animated:YES completion:nil];
 
         }
-        
-        // Keep controls hidden
-        [self setControlsHidden:NO animated:YES permanent:YES];
-
     }
     
 }
