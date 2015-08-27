@@ -845,7 +845,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         pageIndex = page.index;
 		if (pageIndex < (NSUInteger)iFirstIndex || pageIndex > (NSUInteger)iLastIndex) {
 			[_recycledPages addObject:page];
-            [page.captionView removeFromSuperview];
             [page.selectedButton removeFromSuperview];
             [page.playButton removeFromSuperview];
             [page prepareForReuse];
