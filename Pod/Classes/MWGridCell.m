@@ -6,7 +6,6 @@
 //
 //
 
-#import <DACircularProgress/DACircularProgressView.h>
 #import "MWGridCell.h"
 #import "MWCommon.h"
 #import "MWPhotoBrowserPrivate.h"
@@ -19,7 +18,6 @@
     UIImageView *_imageView;
     UIImageView *_videoIndicator;
     UIImageView *_loadingError;
-	DACircularProgressView *_loadingIndicator;
     UIButton *_selectedButton;
     
 }
@@ -62,13 +60,6 @@
         _selectedButton.frame = CGRectMake(0, 0, 44, 44);
         [self addSubview:_selectedButton];
     
-		// Loading indicator
-		_loadingIndicator = [[DACircularProgressView alloc] initWithFrame:CGRectMake(0, 0, 40.0f, 40.0f)];
-        _loadingIndicator.userInteractionEnabled = NO;
-        _loadingIndicator.thicknessRatio = 0.1;
-        _loadingIndicator.roundedCorners = NO;
-		[self addSubview:_loadingIndicator];
-        
         // Listen for photo loading notifications
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(setProgressFromNotification:)
@@ -100,10 +91,6 @@
 - (void)layoutSubviews {
     [super layoutSubviews];
     _imageView.frame = self.bounds;
-    _loadingIndicator.frame = CGRectMake(floorf((self.bounds.size.width - _loadingIndicator.frame.size.width) / 2.),
-                                         floorf((self.bounds.size.height - _loadingIndicator.frame.size.height) / 2),
-                                         _loadingIndicator.frame.size.width,
-                                         _loadingIndicator.frame.size.height);
     _selectedButton.frame = CGRectMake(self.bounds.size.width - _selectedButton.frame.size.width - 0,
                                        0, _selectedButton.frame.size.width, _selectedButton.frame.size.height);
 }
@@ -114,7 +101,6 @@
     _photo = nil;
     _gridController = nil;
     _imageView.image = [ANGArtworkFactory defaultPhotoPlaceHolder];
-    _loadingIndicator.progress = 0;
     _selectedButton.hidden = YES;
     [self hideImageFailure];
     [super prepareForReuse];
@@ -129,13 +115,7 @@
     } else {
         _videoIndicator.hidden = YES;
     }
-    if (_photo) {
-        if (![_photo underlyingImage]) {
-            [self showLoadingIndicator];
-        } else {
-            [self hideLoadingIndicator];
-        }
-    } else {
+    if (!_photo) {
         [self showImageFailure];
     }
 }
@@ -179,17 +159,6 @@
     [super touchesCancelled:touches withEvent:event];
 }
 
-#pragma mark Indicators
-
-- (void)hideLoadingIndicator {
-    _loadingIndicator.hidden = YES;
-}
-
-- (void)showLoadingIndicator {
-    _loadingIndicator.progress = 0;
-    _loadingIndicator.hidden = NO;
-    [self hideImageFailure];
-}
 
 - (void)showImageFailure {
     // Only show if image is not empty
@@ -206,7 +175,6 @@
                                          _loadingError.frame.size.width,
                                          _loadingError.frame.size.height);
     }
-    [self hideLoadingIndicator];
     _imageView.image = nil;
 }
 
@@ -219,18 +187,6 @@
 
 #pragma mark - Notifications
 
-- (void)setProgressFromNotification:(NSNotification *)notification {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        NSDictionary *dict = [notification object];
-        id <MWPhoto> photoWithProgress = [dict objectForKey:@"photo"];
-        if (photoWithProgress == _photo) {
-//            NSLog(@"%f", [[dict valueForKey:@"progress"] floatValue]);
-            float progress = [[dict valueForKey:@"progress"] floatValue];
-            _loadingIndicator.progress = MAX(MIN(1, progress), 0);
-        }
-    });
-}
-
 - (void)handleMWPhotoLoadingDidEndNotification:(NSNotification *)notification {
     id <MWPhoto> photo = [notification object];
     if (photo == _photo) {
@@ -241,7 +197,6 @@
             // Failed to load
             [self showImageFailure];
         }
-        [self hideLoadingIndicator];
     }
 }
 
