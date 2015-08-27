@@ -13,7 +13,9 @@
 #import "MWPhoto.h"
 #import "MWPhotoBrowserPrivate.h"
 #import "UIImage+MWPhotoBrowser.h"
-#define miniPlayerHeight (!IS_IPAD()? 44 : 0)
+#import "MiniPlayerViewController.h"
+
+#define miniPlayerHeight (!IS_IPAD() ? appDelegateS.notificationBarController.miniPlayerController.view.height : 0)
 
 // Private methods and properties
 @interface MWImageAndCaptionScrollView () {
@@ -64,7 +66,7 @@
 		self.showsVerticalScrollIndicator = NO;
 		self.decelerationRate = UIScrollViewDecelerationRateFast;
 		self.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        
+        self.scrollEnabled = YES;
     }
     return self;
 }
@@ -76,7 +78,7 @@
 - (void)prepareForReuse {
     [self hideImageFailure];
     self.photo = nil;
-    self.captionView = nil;
+    [self.captionView removeFromSuperview];
     self.selectedButton = nil;
     self.playButton = nil;
     _photoImageView.hidden = NO;
@@ -109,33 +111,29 @@
         // Will be loading so show loading
         [self showLoadingIndicator];
     }
+    
+    // we can call it since, caption is set before image.
+    // Note: all component in future (strong) should be set before image.
+    [self performLayout];
 }
+
+
 
 // Get and display image
 - (void)displayImage {
-	if (_photo && _photoImageView.image == nil) {
-		
-		self.contentSize = self.bounds.size;
-		
+    
+    if (_photo && _photoImageView.image == nil) {
+				
 		// Get image from browser as it handles ordering of fetching
 		UIImage *img = [_photoBrowser imageForPhoto:_photo];
 		if (img) {
 			
 			// Hide indicator
 			[self hideLoadingIndicator];
-			
 			// Set image
 			_photoImageView.image = img;
 			_photoImageView.hidden = NO;
-			
-			// Setup photo frame
-			_photoImageView.frame = CGRectMake(0,0,self.width, self.width);
-            [self addSubview:self.captionView];
             
-            self.contentSize = CGSizeMake(self.contentSize.width, self.contentSize.height + (self.captionView.height - miniPlayerHeight));
-            
-            self.scrollEnabled = YES;
-                
 		} else  {
 
             // Show image failure
@@ -206,7 +204,7 @@
 #pragma mark - Layout
 
 - (void)layoutSubviews {
-	
+    
 	// Position indicators (centre does not seem to work!)
 	if (!_loadingIndicator.hidden)
         _loadingIndicator.frame = CGRectMake(floorf((self.bounds.size.width - _loadingIndicator.frame.size.width) / 2.),
@@ -218,7 +216,24 @@
                                          floorf((self.bounds.size.height - _loadingError.frame.size.height) / 2),
                                          _loadingError.frame.size.width,
                                          _loadingError.frame.size.height);
+    // Super
+	[super layoutSubviews];
+}
 
+- (void) performLayout{
+ 
+    // needed when page are recycled
+    if(!self.captionView.superview)
+    {
+        [self addSubview:self.captionView];
+    }
+    
+    // initial content
+    self.contentSize = self.bounds.size;
+    
+    // Setup photo initial frame
+    _photoImageView.frame = CGRectMake(0,0,self.width, self.width);
+    
     // Center the image as it becomes smaller than the size of the screen
     CGSize boundsSize = self.bounds.size;
     CGRect frameToCenter = _photoImageView.frame;
@@ -240,13 +255,13 @@
     // Center
     if (!CGRectEqualToRect(_photoImageView.frame, frameToCenter))
         _photoImageView.frame = frameToCenter;
-    
-    
+    self.captionView.center = _photoImageView.center;
     self.captionView.y = _photoImageView.bottom;
-	
     
-    // Super
-	[super layoutSubviews];
+    // Adjust content
+    CGFloat newHeight = (self.captionView.bottom + miniPlayerHeight + 5);
+    self.contentSize = CGSizeMake(self.contentSize.width, (newHeight - self.contentSize.height) > 0 ? newHeight : self.contentSize.height);
+
 }
 
 @end

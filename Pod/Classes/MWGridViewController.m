@@ -10,7 +10,7 @@
 #import "MWGridCell.h"
 #import "MWPhotoBrowserPrivate.h"
 #import "MWCommon.h"
-
+#import "MiniPlayerViewController.h"
 @interface MWGridViewController () {
     
     // Store margins for current setup
@@ -83,6 +83,11 @@
     [super viewDidLayoutSubviews];
 }
 
+- (void) viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    [self adjustInsetsForMiniPlayer];
+}
+
 - (void)adjustOffsetsAsRequired {
     
     // Move to previous content offset
@@ -111,13 +116,30 @@
 
 - (void)performLayout {
     UINavigationBar *navBar = self.navigationController.navigationBar;
-    self.collectionView.contentInset = UIEdgeInsetsMake(navBar.frame.origin.y + navBar.frame.size.height + [self getGutter], 0, 0, 0);
+    self.collectionView.contentInset = UIEdgeInsetsMake(navBar.frame.origin.y + navBar.frame.size.height + [self getGutter], 0, self.collectionView.contentInset.bottom, 0);
 }
+
+
 
 - (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration {
     [self.collectionView reloadData];
     [self performLayout]; // needed for iOS 5 & 6
 }
+
+- (void)adjustInsetsForMiniPlayer
+{
+    if (!IS_IPAD())
+    {
+        BOOL miniPlayerShowing = appDelegateS.notificationBarController.isMiniPlayerShowing;
+        if(miniPlayerShowing){
+            CGFloat bottomInset = appDelegateS.notificationBarController.miniPlayerController.view.height;
+            UIEdgeInsets original = self.collectionView.contentInset;
+            self.collectionView.contentInset = UIEdgeInsetsMake(original.top, original.left, original.bottom + bottomInset, original.right);
+            self.collectionView.contentSize = CGSizeMake(self.collectionView.contentSize.width, self.collectionView.contentSize.height + bottomInset);
+        }
+    }
+}
+
 
 #pragma mark - Layout
 
