@@ -711,7 +711,21 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     } else {
         id <MWPhoto> photo = [self photoAtIndex:index];
         if(_anghamiPhotos){
-            captionView = [[MWCaptionView alloc] initWithCaption:[(Photo *)_anghamiPhotos[index] caption]];
+            Photo* photoObj = (Photo *)_anghamiPhotos[index];
+            NSString* caption = photoObj.caption;
+            NSString* date = photoObj.date;
+            if(date.length>0)
+            {
+                NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+                dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss";
+                NSDate *captionDate= [dateFormatter dateFromString:date];
+                dateFormatter.dateFormat = @"dd-MMM-yyyy";
+                date = [dateFormatter stringFromDate:captionDate];
+                if(caption.length>0)
+                    caption = [caption stringByAppendingString:[NSString stringWithFormat:@"\n %@",date]];
+                else caption = date;
+            }
+            captionView = [[MWCaptionView alloc] initWithCaption:caption];
         }
         else if ([photo respondsToSelector:@selector(caption)]) {
             if ([photo caption]) captionView = [[MWCaptionView alloc] initWithPhoto:photo];
