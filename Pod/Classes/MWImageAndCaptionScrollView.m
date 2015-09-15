@@ -216,6 +216,7 @@
                                          floorf((self.bounds.size.height - _loadingError.frame.size.height) / 2),
                                          _loadingError.frame.size.width,
                                          _loadingError.frame.size.height);
+    
     // Super
 	[super layoutSubviews];
 }
@@ -233,7 +234,6 @@
     
     // Setup photo initial frame
     _photoImageView.frame = CGRectMake(0,0,self.width, self.width);
-    
     // Center the image as it becomes smaller than the size of the screen
     CGSize boundsSize = self.bounds.size;
     CGRect frameToCenter = _photoImageView.frame;
@@ -251,17 +251,20 @@
     } else {
         frameToCenter.origin.y = 0;
     }
+    if(DEVICE_IS_IPHONE_5)
+        frameToCenter.origin.y += 10;
+    else if(DEVICE_IS_IPHONE_4)
+        frameToCenter.origin.y += 50;
     
     // Center
     if (!CGRectEqualToRect(_photoImageView.frame, frameToCenter))
         _photoImageView.frame = frameToCenter;
-    self.captionView.center = _photoImageView.center;
+    self.captionView.x = _photoImageView.x;
     self.captionView.y = _photoImageView.bottom;
     
     // Adjust content
     CGFloat newHeight = (self.captionView.bottom + miniPlayerHeight + 5);
     self.contentSize = CGSizeMake(self.contentSize.width, (newHeight - self.contentSize.height) > 0 ? newHeight : self.contentSize.height);
-
 }
 
 @end

@@ -27,5 +27,6 @@
 - (void)prepareForReuse;
 - (BOOL)displayingVideo;
 - (void)setImageHidden:(BOOL)hidden;
+- (void) performLayout;
 
 @end

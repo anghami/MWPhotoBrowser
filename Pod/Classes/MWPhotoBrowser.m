@@ -586,6 +586,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 	// Remember page index before rotation
 	_pageIndexBeforeRotation = _currentPageIndex;
 	_rotating = YES;
+    
 }
 
 - (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration {
@@ -604,6 +605,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         overlay = nil;
         [self addArtistOverlay:[self artistForPhotoAtIndex:_currentPageIndex]];
         _gradient.frame =self.view.bounds;
+        
+        MWImageAndCaptionScrollView* currentPage = [self pageDisplayedAtIndex:_currentPageIndex];
+        [currentPage performLayout];
     }
 }
 
