@@ -15,7 +15,7 @@ static const CGFloat labelPadding = 10;
 // Private
 @interface MWCaptionView () {
     id <MWPhoto> _photo;
-    NSString* _anghamiCaption;
+    NSAttributedString* _anghamiCaption;
 }
 @end
 
@@ -31,7 +31,7 @@ static const CGFloat labelPadding = 10;
     return self;
 }
 
-- (id)initWithCaption:(NSString *)caption {
+- (id)initWithCaption:(NSAttributedString *)caption {
     self = [super initWithFrame:CGRectMake(0, 0, 320, 44)]; // Random initial frame
     if (self) {
         self.backgroundColor = [UIColor clearColor];
@@ -55,14 +55,12 @@ static const CGFloat labelPadding = 10;
 - (void)setupCaption {
     self.opaque = NO;
     self.backgroundColor = [UIColor clearColor];
-    self.textAlignment = NSTextAlignmentLeft;
-    self.textColor =  [UIColor whiteColor];
-    self.userInteractionEnabled = YES;
+    self.textAlignment = NSTextAlignmentNatural;
     self.font = IS_IPAD() ? [UIFont systemFontOfSize:17] :[UIFont systemFontOfSize:14];
     self.numberOfLines = 0;
     
     if(_anghamiCaption)
-        self.text = _anghamiCaption;
+        self.attributedText = _anghamiCaption;
     else if ([_photo respondsToSelector:@selector(caption)]) {
         self.text = [_photo caption] ? [_photo caption] : @" ";
     }

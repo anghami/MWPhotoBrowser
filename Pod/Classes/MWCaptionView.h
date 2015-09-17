@@ -15,7 +15,7 @@
 - (id)initWithPhoto:(id<MWPhoto>)photo;
 
 // Custom Anghami init
-- (id)initWithCaption:(NSString *)caption;
+- (id)initWithCaption:(NSAttributedString *)caption;
 
 // To create your own custom caption view, subclass this view
 // and override the following two methods (as well as any other
