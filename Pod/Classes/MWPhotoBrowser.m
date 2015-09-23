@@ -385,8 +385,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         [self.view addSubview:overlay];
         
         [overlay autolayoutWidthProportionalToParentWidth:1 constant:0];
+        [overlay autolayoutPinEdge:NSLayoutAttributeLeft toParentEdge:NSLayoutAttributeLeft constant:8];
         [overlay autolayoutPinEdge:NSLayoutAttributeTop toParentEdge:NSLayoutAttributeTop constant:self.navigationController.navigationBar.height*1.5];
-        [self.view addConstraint:[NSLayoutConstraint constraintWithItem:overlay attribute:NSLayoutAttributeLeft relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeLeft multiplier:1 constant:8]];
     }
     else{
         if(![overlay.artist.artistId isEqualToString:artist.artistId])
