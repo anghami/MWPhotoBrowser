@@ -9,6 +9,7 @@
 #import "MWCommon.h"
 #import "MWCaptionView.h"
 #import "MWPhoto.h"
+#import "NSString+Utils.h"
 
 static const CGFloat labelPadding = 10;
 
@@ -55,7 +56,6 @@ static const CGFloat labelPadding = 10;
 - (void)setupCaption {
     self.opaque = NO;
     self.backgroundColor = [UIColor clearColor];
-    self.textAlignment = NSTextAlignmentNatural;
     self.font = IS_IPAD() ? [UIFont systemFontOfSize:17] :[UIFont systemFontOfSize:14];
     self.numberOfLines = 0;
     
@@ -64,6 +64,7 @@ static const CGFloat labelPadding = 10;
     else if ([_photo respondsToSelector:@selector(caption)]) {
         self.text = [_photo caption] ? [_photo caption] : @" ";
     }
+    self.textAlignment = [self.text isArabic] || [self.attributedText.string isArabic]? NSTextAlignmentRight : NSTextAlignmentLeft;
 }
 
 - (void)drawTextInRect:(CGRect)rect {
