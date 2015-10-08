@@ -8,14 +8,15 @@
 
 #import <UIKit/UIKit.h>
 #import "MWPhotoProtocol.h"
+#import "Photo.h"
 
-@interface MWCaptionView : UILabel
+@interface MWCaptionView : UIView
 
 // Init
 - (id)initWithPhoto:(id<MWPhoto>)photo;
 
 // Custom Anghami init
-- (id)initWithCaption:(NSAttributedString *)caption;
+- (id)initWithAnghamiPhoto:(Photo *)photo;
 
 // To create your own custom caption view, subclass this view
 // and override the following two methods (as well as any other

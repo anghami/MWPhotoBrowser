@@ -716,26 +716,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         id <MWPhoto> photo = [self photoAtIndex:index];
         if(_anghamiPhotos){
             Photo* photoObj = (Photo *)_anghamiPhotos[index];
-            NSString* caption = n2blank(photoObj.caption);
-            NSString* date = n2blank(photoObj.date);
-            // create mutable attributed caption
-            NSMutableAttributedString *attributedCaption = [[NSMutableAttributedString alloc] initWithString:caption attributes:@{NSForegroundColorAttributeName:[UIColor whiteColor]}];
-            if(date.length>0)
-            {
-                // format date
-                NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-                dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss";
-                NSDate *captionDate= [dateFormatter dateFromString:date];
-                dateFormatter.dateFormat = @"d MMM yyyy";
-                date = [dateFormatter stringFromDate:captionDate];
-                // append or add
-                if(caption.length > 0)
-                    date = [NSString stringWithFormat:@"\n%@",date];
-                // attributed date color
-                NSAttributedString *attributedDate = [[NSAttributedString alloc] initWithString:date attributes:@{NSForegroundColorAttributeName:[[UIColor whiteColor] colorWithAlphaComponent:.5]}];
-                [attributedCaption appendAttributedString:attributedDate];
-            }
-            captionView = [[MWCaptionView alloc] initWithCaption:attributedCaption];
+            captionView = [[MWCaptionView alloc] initWithAnghamiPhoto:photoObj];
         }
         else if ([photo respondsToSelector:@selector(caption)]) {
             if ([photo caption]) captionView = [[MWCaptionView alloc] initWithPhoto:photo];
