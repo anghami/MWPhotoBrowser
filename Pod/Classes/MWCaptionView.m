@@ -135,7 +135,10 @@
         [_likesAndDateView addSubview:_dateLabel];
     }
     [_dateLabel centerVertically];
-    _dateLabel.x = _likesAndDateView.width - _dateLabel.width - labelPadding;
+    if(IS_IOS9() && IsArabic)
+        _dateLabel.left = _likesAndDateView.left + labelPadding;
+    else
+    _dateLabel.right = _likesAndDateView.right - labelPadding;
 }
 
 - (void) layoutLikeButton{
@@ -146,7 +149,10 @@
         [_likesAndDateView addSubview:_likeButton];
     }
     [_likeButton centerVertically];
-    _likeButton.x = labelPadding;
+    if(IS_IOS9() && IsArabic)
+        _likeButton.right = _likesAndDateView.right - labelPadding;
+    else
+        _likeButton.left = _likesAndDateView.left + labelPadding;
     NSString * imageName = _anghamiPhoto.isLiked ? @"MiniPlayer-Liked":@"MiniPlayer-Like";
     [_likeButton setImage:[UIImage imageNamed:imageName] forState:UIControlStateNormal];
 }
@@ -161,7 +167,10 @@
     _likesLabel.text = [self formattedLikes:_anghamiPhoto.numberOflikes];
     [_likesLabel sizeToFit];
     [_likesLabel centerVertically];
-    _likesLabel.x = _likeButton.x + _likeButton.width + labelPadding;
+    if(IS_IOS9() && IsArabic)
+        _likesLabel.right = _likeButton.left - labelPadding;
+    else
+        _likesLabel.left = _likeButton.right + labelPadding;
 }
 
 
