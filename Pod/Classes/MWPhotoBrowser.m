@@ -172,7 +172,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     self.view.clipsToBounds = YES;
 	
 	// Setup paging scrolling view
-	CGRect pagingScrollViewFrame = [self frameForPagingScrollView];
+    CGRect bounds = [[UIScreen mainScreen] bounds];
+    bounds.size.width -= 80;
+    CGRect pagingScrollViewFrame = IS_IPAD() ? bounds : [self frameForPagingScrollView];
 	_pagingScrollView = [[UIScrollView alloc] initWithFrame:pagingScrollViewFrame];
 	_pagingScrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 	_pagingScrollView.pagingEnabled = YES;
@@ -574,7 +576,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 #pragma mark - Rotation
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation {
-    return YES;
+    return IS_IPAD();
 }
 
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
@@ -607,6 +609,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         _gradient.frame =self.view.bounds;
         
         MWImageAndCaptionScrollView* currentPage = [self pageDisplayedAtIndex:_currentPageIndex];
+        [currentPage.captionView removeFromSuperview];
+        currentPage.captionView = [self captionViewForPhotoAtIndex:_currentPageIndex];
         [currentPage performLayout];
     }
 }
