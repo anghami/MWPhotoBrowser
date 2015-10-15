@@ -522,7 +522,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
 	// Remember index
 	NSUInteger indexPriorToLayout = _currentPageIndex;
-	
+ 
 	// Get paging scroll view frame to determine if anything needs changing
 	CGRect pagingScrollViewFrame = [self frameForPagingScrollView];
     
@@ -555,6 +555,22 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         }
 
 	}
+    
+    // if first index Add arrows
+    if(_previousPageIndex == NSUIntegerMax){
+        UIImageView *leftArrow = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"Browser-ArrowLeft"]];
+        UIImageView *rightArrow = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"Browser-ArrowRight"]];
+        leftArrow.tag = 888;
+        rightArrow.tag = 999;
+        [leftArrow sizeToFit];
+        [rightArrow sizeToFit];
+        [self.view addSubview:leftArrow];
+        [self.view addSubview:rightArrow];
+        leftArrow.x =  10;
+        rightArrow.x = self.view.bounds.size.width - rightArrow.width - 10;
+        [leftArrow centerVertically];
+        [rightArrow centerVertically];
+    }
     
     // Adjust video loading indicator if it's visible
     [self positionVideoLoadingIndicator];
@@ -1035,6 +1051,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
     // Notify delegate
     if (index != _previousPageIndex) {
+        
         if ([_delegate respondsToSelector:@selector(photoBrowser:didDisplayPhotoAtIndex:)])
             [_delegate photoBrowser:self didDisplayPhotoAtIndex:index];
         _previousPageIndex = index;
@@ -1126,6 +1143,14 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     NSUInteger previousCurrentPage = _currentPageIndex;
     _currentPageIndex = index;
     if (_currentPageIndex != previousCurrentPage) {
+        // remove arrows
+        UIView *view1 = [self.view viewWithTag:888];
+        UIView *view2 = [self.view viewWithTag:999];
+        if(!view1.isHidden && !view2.isHidden)
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [view1 setHidden:YES];
+                [view2 setHidden:YES];
+            });
         [self didStartViewingPageAtIndex:index];
     }
 }
