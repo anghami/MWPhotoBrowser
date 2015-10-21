@@ -572,6 +572,10 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         rightArrow.x = self.view.bounds.size.width - rightArrow.width - 10;
         [leftArrow centerVertically];
         [rightArrow centerVertically];
+    }else if(_previousPageIndex == 0){
+        // hide the Arrow on left if index is 0.
+        UIView *view1 = [self.view viewWithTag:888];
+        view1.alpha = 0;
     }
     
     // Adjust video loading indicator if it's visible
