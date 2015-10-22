@@ -10,6 +10,7 @@
 #import "MWCaptionView.h"
 #import "MWPhoto.h"
 #import "NSString+Utils.h"
+#import "PostPhotoLikeLoader.h"
 
 #define labelPadding  10
 #define likesAndDateViewHeight 30
@@ -185,12 +186,20 @@
 - (void)updateLikeState{
     _anghamiPhoto.isLiked = !_anghamiPhoto.isLiked;
     _anghamiPhoto.numberOflikes = _anghamiPhoto.isLiked ?  _anghamiPhoto.numberOflikes+ 1 : _anghamiPhoto.numberOflikes -1;
+    [self reportLikeState:_anghamiPhoto.isLiked];
+    
     [self layoutIfNeeded];
     [self setNeedsLayout];
 }
 
-- (void) reportLikeState{
+- (void) reportLikeState:(BOOL) isLiked{
     
+    NSString * action = isLiked ? @"like" : @"unlike";
+    PostPhotoLikeLoader * loader = [[PostPhotoLikeLoader alloc] initWithParams:@{
+                                                                                 @"id": _anghamiPhoto.iD,
+                                                                                 @"action": action
+                                                                                 }];
+    [loader startLoad];
 }
 
 @end
