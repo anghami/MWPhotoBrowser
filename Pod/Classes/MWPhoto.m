@@ -12,10 +12,11 @@
 #import <AssetsLibrary/AssetsLibrary.h>
 #import "MWPhoto.h"
 #import "MWPhotoBrowser.h"
+#import "ANGAsyncImageView.h"
 
 LOG_LEVEL_ANGHAMI_DEFAULT
 
-@interface MWPhoto () {
+@interface MWPhoto () <ANGAsyncImageViewDelegate> {
 
     BOOL _loadingInProgress;
     id <SDWebImageOperation> _webImageOperation;
@@ -27,6 +28,7 @@ LOG_LEVEL_ANGHAMI_DEFAULT
 @property (nonatomic, strong) NSURL *photoURL;
 @property (nonatomic, strong) PHAsset *asset;
 @property (nonatomic) CGSize assetTargetSize;
+@property (nonatomic, strong) ANGAsyncImageView *asyncImageView;
 
 - (void)imageLoadingComplete;
 
@@ -44,6 +46,10 @@ LOG_LEVEL_ANGHAMI_DEFAULT
 
 + (MWPhoto *)photoWithURL:(NSURL *)url {
     return [[MWPhoto alloc] initWithURL:url];
+}
+
++ (MWPhoto *)photoWithAsyncImageView:(ANGAsyncImageView *)imageView {
+    return [[MWPhoto alloc] initWithAsyncImageView:imageView];
 }
 
 + (MWPhoto *)photoWithAsset:(PHAsset *)asset targetSize:(CGSize)targetSize {
@@ -91,6 +97,13 @@ LOG_LEVEL_ANGHAMI_DEFAULT
         self.videoURL = url;
         self.isVideo = YES;
         self.emptyImage = YES;
+    }
+    return self;
+}
+
+- (id)initWithAsyncImageView:(ANGAsyncImageView *)imageView {
+    if ((self = [super init])) {
+        self.asyncImageView = imageView;
     }
     return self;
 }
@@ -181,6 +194,9 @@ LOG_LEVEL_ANGHAMI_DEFAULT
         // Load from photos asset
         [self _performLoadUnderlyingImageAndNotifyWithAsset: _asset targetSize:_assetTargetSize];
         
+    } else if(_asyncImageView) {
+        // load anghami Photo
+        [self _perfomLoadUnderlyingImageAndNotifyWithAsyncImageView:_asyncImageView];
     } else {
         
         // Image is empty
@@ -189,8 +205,15 @@ LOG_LEVEL_ANGHAMI_DEFAULT
     }
 }
 
+- (void)_perfomLoadUnderlyingImageAndNotifyWithAsyncImageView:(ANGAsyncImageView *)asyncImageView {
+    asyncImageView.delegate = self;
+    [asyncImageView startLoadWithPlaceHolder:[ANGArtworkFactory defaultPhotoPlaceHolder] placeHolderAnyAvailableSize:YES];
+}
+
+
 // Load from local file
 - (void)_performLoadUnderlyingImageAndNotifyWithWebURL:(NSURL *)url {
+    
     @try {
         SDWebImageManager *manager = [SDWebImageManager sharedManager];
         _webImageOperation = [manager downloadImageWithURL:url
@@ -321,4 +344,9 @@ LOG_LEVEL_ANGHAMI_DEFAULT
     }
 }
 
+// async delegate
+- (void)asyncImageSet:(ANGAsyncImageView *)ai{
+    _underlyingImage = ai.image;
+    [self imageLoadingComplete];
+}
 @end

@@ -22,7 +22,6 @@
     
     MWPhotoBrowser __weak *_photoBrowser;
 	UIImageView *_photoImageView;
-	DACircularProgressView *_loadingIndicator;
     UIImageView *_loadingError;
     
 }
@@ -42,22 +41,8 @@
 		_photoImageView = [[UIImageView alloc] initWithFrame:CGRectZero];
 		_photoImageView.contentMode = UIViewContentModeScaleAspectFill;
 		_photoImageView.backgroundColor = [UIColor clearColor];
+        _photoImageView.image = [ANGArtworkFactory defaultPhotoPlaceHolder];
 		[self addSubview:_photoImageView];
-		
-		// Loading indicator
-		_loadingIndicator = [[DACircularProgressView alloc] initWithFrame:CGRectMake(140.0f, 30.0f, 40.0f, 40.0f)];
-        _loadingIndicator.userInteractionEnabled = NO;
-        _loadingIndicator.thicknessRatio = 0.1;
-        _loadingIndicator.roundedCorners = NO;
-		_loadingIndicator.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleTopMargin |
-        UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleRightMargin;
-		[self addSubview:_loadingIndicator];
-
-        // Listen progress notifications
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(setProgressFromNotification:)
-                                                     name:MWPHOTO_PROGRESS_NOTIFICATION
-                                                   object:nil];
         
 		// Setup
 		self.backgroundColor = [UIColor clearColor];
@@ -82,7 +67,7 @@
     self.selectedButton = nil;
     self.playButton = nil;
     _photoImageView.hidden = NO;
-    _photoImageView.image = nil;
+    _photoImageView.image = [ANGArtworkFactory defaultPhotoPlaceHolder];
     _index = NSUIntegerMax;
 }
 
@@ -107,11 +92,7 @@
     UIImage *img = [_photoBrowser imageForPhoto:_photo];
     if (img) {
         [self displayImage];
-    } else {
-        // Will be loading so show loading
-        [self showLoadingIndicator];
     }
-    
     // we can call it since, caption is set before image.
     // Note: all component in future (strong) should be set before image.
     [self performLayout];
@@ -122,20 +103,16 @@
 // Get and display image
 - (void)displayImage {
     
-    if (_photo && _photoImageView.image == nil) {
+    if (_photo) {
 				
 		// Get image from browser as it handles ordering of fetching
 		UIImage *img = [_photoBrowser imageForPhoto:_photo];
 		if (img) {
-			
-			// Hide indicator
-			[self hideLoadingIndicator];
 			// Set image
 			_photoImageView.image = img;
 			_photoImageView.hidden = NO;
             
 		} else  {
-
             // Show image failure
             [self displayImageFailure];
 			
@@ -146,7 +123,6 @@
 
 // Image failed so just show black!
 - (void)displayImageFailure {
-    [self hideLoadingIndicator];
     _photoImageView.image = nil;
     
     // Show if image is not empty
@@ -174,43 +150,11 @@
     }
 }
 
-#pragma mark - Loading Progress
-
-- (void)setProgressFromNotification:(NSNotification *)notification {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        NSDictionary *dict = [notification object];
-        id <MWPhoto> photoWithProgress = [dict objectForKey:@"photo"];
-        if (photoWithProgress == self.photo) {
-            float progress = [[dict valueForKey:@"progress"] floatValue];
-            _loadingIndicator.progress = MAX(MIN(1, progress), 0);
-        }
-    });
-}
-
-- (void)hideLoadingIndicator {
-    _loadingIndicator.hidden = YES;
-}
-
-- (void)showLoadingIndicator {
-    self.zoomScale = 0;
-    self.minimumZoomScale = 0;
-    self.maximumZoomScale = 0;
-    _loadingIndicator.progress = 0;
-    _loadingIndicator.hidden = NO;
-    [self hideImageFailure];
-}
-
 
 #pragma mark - Layout
 
 - (void)layoutSubviews {
     
-	// Position indicators (centre does not seem to work!)
-	if (!_loadingIndicator.hidden)
-        _loadingIndicator.frame = CGRectMake(floorf((self.bounds.size.width - _loadingIndicator.frame.size.width) / 2.),
-                                         floorf((self.bounds.size.height - _loadingIndicator.frame.size.height) / 2),
-                                         _loadingIndicator.frame.size.width,
-                                         _loadingIndicator.frame.size.height);
 	if (_loadingError)
         _loadingError.frame = CGRectMake(floorf((self.bounds.size.width - _loadingError.frame.size.width) / 2.),
                                          floorf((self.bounds.size.height - _loadingError.frame.size.height) / 2),

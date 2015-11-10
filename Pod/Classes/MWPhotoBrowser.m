@@ -114,9 +114,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     _pagingScrollView.delegate = nil;
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     [self releaseAllUnderlyingPhotos:NO];
-#warning This will almost definitely have adverse effects on image loading outside the library \
-         This is bad practice, should be using an image cache specific to MWPhotoBrowser
-    [[SDImageCache sharedImageCache] clearMemory]; // clear memory
 }
 
 - (void)releaseAllUnderlyingPhotos:(BOOL)preserveCurrent {
@@ -701,7 +698,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
                 photo = [_fixedPhotosArray objectAtIndex:index];
             }
             else if(_anghamiPhotos && index<_anghamiPhotos.count){
-                photo = [MWPhoto photoWithURL:[NSURL URLWithString:((Photo*)_anghamiPhotos[index]).imageURL]];
+                ANGAsyncImageView *async = [[ANGAsyncImageView alloc] init];
+                async.imageUrl = ((Photo*)_anghamiPhotos[index]).imageURL;
+                photo = [MWPhoto photoWithAsyncImageView:async];
             }
             if (photo) [_photos replaceObjectAtIndex:index withObject:photo];
         } else {
@@ -719,9 +718,11 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             if ([_delegate respondsToSelector:@selector(photoBrowser:thumbPhotoAtIndex:)]) {
                 photo = [_delegate photoBrowser:self thumbPhotoAtIndex:index];
             }
-            else if(_anghamiPhotos && index<_anghamiPhotos.count)
-                photo = [MWPhoto photoWithURL:[NSURL URLWithString:((Photo*)_anghamiPhotos[index]).thumbnailURL]];
-            
+            else if(_anghamiPhotos && index<_anghamiPhotos.count){
+                ANGAsyncImageView *async = [[ANGAsyncImageView alloc] init];
+                async.imageUrl = ((Photo*)_anghamiPhotos[index]).thumbnailURL;
+                photo = [MWPhoto photoWithAsyncImageView:async];
+            }
             if (photo) [_thumbPhotos replaceObjectAtIndex:index withObject:photo];
         } else {
             photo = [_thumbPhotos objectAtIndex:index];
