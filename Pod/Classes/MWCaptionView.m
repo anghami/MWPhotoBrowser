@@ -123,7 +123,7 @@
     if(likes > 1)
         return [NSString stringWithFormat:NSLocalizedString(@"%@ likes", nil), [NSString abbreviatedCountForCount:likes]];
     else if(likes == 1)
-        return [NSString stringWithFormat:NSLocalizedString(@"%@ like", nil), [NSString abbreviatedCountForCount:likes]];
+        return NSLocalizedString(@"1 like", nil);
     return @"";
 }
 
