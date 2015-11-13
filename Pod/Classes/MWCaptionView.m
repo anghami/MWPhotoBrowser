@@ -13,7 +13,7 @@
 #import "PostPhotoLikeLoader.h"
 
 #define labelPadding  10
-#define likesAndDateViewHeight 30
+#define likesAndDateViewHeight 52
 
 @interface ResizableLabel : UILabel
 @end
@@ -120,8 +120,10 @@
 }
 
 -(NSString *)formattedLikes:(NSUInteger)likes{
-    if(likes > 0)
+    if(likes > 1)
         return [NSString stringWithFormat:NSLocalizedString(@"%@ likes", nil), [NSString abbreviatedCountForCount:likes]];
+    else if(likes == 1)
+        return [NSString stringWithFormat:NSLocalizedString(@"%@ like", nil), [NSString abbreviatedCountForCount:likes]];
     return @"";
 }
 
@@ -146,7 +148,7 @@
     if(!_likeButton){
         _likeButton = [[EX2GlowButton alloc] init];
         [_likeButton addTarget:self action:@selector(updateLikeState) forControlEvents:UIControlEventTouchUpInside];
-        _likeButton.size = CGSizeMake(likesAndDateViewHeight - 5, likesAndDateViewHeight - 5);
+        _likeButton.size = CGSizeMake(36, 32);
         [_likesAndDateView addSubview:_likeButton];
     }
     [_likeButton centerVertically];
@@ -154,7 +156,7 @@
         _likeButton.right = _likesAndDateView.right - labelPadding;
     else
         _likeButton.left = _likesAndDateView.left + labelPadding;
-    NSString * imageName = _anghamiPhoto.isLiked ? @"MiniPlayer-Liked":@"MiniPlayer-Like";
+    NSString * imageName = _anghamiPhoto.isLiked ? @"PhotoLiked" : @"PhotoLike";
     [_likeButton setImage:[UIImage imageNamed:imageName] forState:UIControlStateNormal];
 }
 
