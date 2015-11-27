@@ -755,7 +755,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 - (Artist *) artistForPhotoAtIndex:(NSUInteger)index{
     
     Artist* anArtist = nil;
-    if (index < _photos.count) {
+    if (index && index < _photos.count) {
         if ([_delegate respondsToSelector:@selector(artistForPhotoAtIndex:)]) {
             anArtist = [_delegate artistForPhotoAtIndex:index];
         }
