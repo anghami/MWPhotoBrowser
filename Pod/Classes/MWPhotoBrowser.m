@@ -202,7 +202,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         swipeGesture.direction = UISwipeGestureRecognizerDirectionDown | UISwipeGestureRecognizerDirectionUp;
         [self.view addGestureRecognizer:swipeGesture];
     }
-    [self addArtistOverlay:[self artistForPhotoAtIndex:_currentPageIndex]];
 
 	// Super
     [super viewDidLoad];
@@ -449,6 +448,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             [self tilePages];
         });
     }
+    // above code  will jump to page 0 and change the artist so Add here
+    [self addArtistOverlay:[self artistForPhotoAtIndex:_currentPageIndex]];
 
 }
 
@@ -755,7 +756,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 - (Artist *) artistForPhotoAtIndex:(NSUInteger)index{
     
     Artist* anArtist = nil;
-    if (index && index < _photos.count) {
+    if (index < _photos.count) {
         if ([_delegate respondsToSelector:@selector(artistForPhotoAtIndex:)]) {
             anArtist = [_delegate artistForPhotoAtIndex:index];
         }
