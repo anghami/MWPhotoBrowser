@@ -1227,6 +1227,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 		CGRect pageFrame = [self frameForPageAtIndex:index];
         [_pagingScrollView setContentOffset:CGPointMake(pageFrame.origin.x - PADDING, 0) animated:animated];
 		[self updateNavigation];
+        [self  addArtistOverlay:[self artistForPhotoAtIndex:index]];
 	}
 }
 
