@@ -207,7 +207,7 @@
     self.captionView.y = _photoImageView.bottom;
     
     // Adjust content
-    CGFloat newHeight = (self.captionView.bottom + miniPlayerHeight + 5);
+    CGFloat newHeight = (self.captionView.bottom + appDelegateS.notificationBarController.miniPlayerController.view.height + appDelegateS.tabBarManager.tabBar.height + 5);
     self.contentSize = CGSizeMake(self.contentSize.width, (newHeight - self.contentSize.height) > 0 ? newHeight : self.contentSize.height);
 }
 
