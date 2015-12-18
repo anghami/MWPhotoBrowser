@@ -1143,6 +1143,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
                 [view2 setHidden:YES];
             });
         [self didStartViewingPageAtIndex:index];
+        [[ANGAnalytics sharedInstance]logEvent:@"Swipe photo" ofType:nil];
     }
 }
 
