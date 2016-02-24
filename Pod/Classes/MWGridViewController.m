@@ -11,6 +11,8 @@
 #import "MWPhotoBrowserPrivate.h"
 #import "MWCommon.h"
 #import "MiniPlayerViewController.h"
+
+
 @interface MWGridViewController () {
     
     // Store margins for current setup
@@ -132,7 +134,7 @@
     {
         BOOL miniPlayerShowing = appDelegateS.notificationBarController.isMiniPlayerShowing;
         if(miniPlayerShowing){
-            CGFloat bottomInset = appDelegateS.notificationBarController.miniPlayerController.view.height;
+            CGFloat bottomInset = miniPlayerHeight;
             UIEdgeInsets original = self.collectionView.contentInset;
             self.collectionView.contentInset = UIEdgeInsetsMake(original.top, original.left, original.bottom + bottomInset, original.right);
             self.collectionView.contentSize = CGSizeMake(self.collectionView.contentSize.width, self.collectionView.contentSize.height + bottomInset);
