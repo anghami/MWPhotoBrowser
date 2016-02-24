@@ -1549,7 +1549,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             [self.delegate photoBrowser:self actionButtonPressedForPhotoAtIndex:_currentPageIndex];
             
         } else if(_anghamiPhotos){
-            [appDelegateS shareImageOrText:@{
+            [appDelegateS shareFromDictionary:@{
                                              @"image" : n2blank([(Photo *) _anghamiPhotos[_currentPageIndex] imageURL]),
                                              @"text" : n2blank([(Photo *) _anghamiPhotos[_currentPageIndex] caption])
                                              }];
