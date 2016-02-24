@@ -63,6 +63,7 @@
     [self.collectionView registerClass:[MWGridCell class] forCellWithReuseIdentifier:@"GridCell"];
     self.collectionView.alwaysBounceVertical = YES;
     self.collectionView.backgroundColor = [UIColor colorWithHexString:@"ececee"];
+    [self adjustInsetsForMiniPlayer];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -83,11 +84,6 @@
 
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
-}
-
-- (void) viewWillAppear:(BOOL)animated{
-    [super viewWillAppear:animated];
-    [self adjustInsetsForMiniPlayer];
 }
 
 - (void)adjustOffsetsAsRequired {
@@ -130,15 +126,11 @@
 
 - (void)adjustInsetsForMiniPlayer
 {
-    if (!IS_IPAD())
-    {
-        BOOL miniPlayerShowing = appDelegateS.notificationBarController.isMiniPlayerShowing;
-        if(miniPlayerShowing){
-            CGFloat bottomInset = miniPlayerHeight;
-            UIEdgeInsets original = self.collectionView.contentInset;
-            self.collectionView.contentInset = UIEdgeInsetsMake(original.top, original.left, original.bottom + bottomInset, original.right);
-            self.collectionView.contentSize = CGSizeMake(self.collectionView.contentSize.width, self.collectionView.contentSize.height + bottomInset);
-        }
+    if (!IS_IPAD()) {
+        CGFloat bottomInset = miniPlayerHeight;
+        UIEdgeInsets original = self.collectionView.contentInset;
+        self.collectionView.contentInset = UIEdgeInsetsMake(original.top, original.left, original.bottom + bottomInset, original.right);
+        self.collectionView.contentSize = CGSizeMake(self.collectionView.contentSize.width, self.collectionView.contentSize.height + bottomInset);
     }
 }
 
