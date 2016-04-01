@@ -448,9 +448,11 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             [self tilePages];
         });
     }
+    
     // above code  will jump to page 0 and change the artist so Add here
-    [self addArtistOverlay:[self artistForPhotoAtIndex:_currentPageIndex]];
-
+    if(!_startOnGrid) {
+        [self addArtistOverlay:[self artistForPhotoAtIndex:_currentPageIndex]];
+    }
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -557,7 +559,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 	}
     
     // if first index Add arrows
-    if(_previousPageIndex == NSUIntegerMax){
+    if(_previousPageIndex == NSUIntegerMax && !_startOnGrid)
+    {
         UIImageView *leftArrow = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"Browser-ArrowLeft"]];
         UIImageView *rightArrow = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"Browser-ArrowRight"]];
         leftArrow.tag = 888;
@@ -570,7 +573,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         rightArrow.x = self.view.bounds.size.width - rightArrow.width - 10;
         [leftArrow centerVertically];
         [rightArrow centerVertically];
-    }else if(_previousPageIndex == 0){
+    }
+    else if(_previousPageIndex == 0)
+    {
         // hide the Arrow on left if index is 0.
         UIView *view1 = [self.view viewWithTag:888];
         view1.alpha = 0;
@@ -1476,6 +1481,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     // Update
     [self updateNavigation];
     [self updateVisiblePageStates];
+    [self addArtistOverlay:[self artistForPhotoAtIndex:_currentPageIndex]];
     
     // Animate, hide grid and show paging scroll view
     [UIView animateWithDuration:0.3 animations:^{
