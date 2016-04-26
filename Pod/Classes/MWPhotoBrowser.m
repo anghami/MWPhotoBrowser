@@ -383,7 +383,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         [self.view addSubview:overlay];
         
         [overlay autolayoutWidthProportionalToParentWidth:1 constant:0];
-        [overlay autolayoutPinEdge:NSLayoutAttributeLeft toParentEdge:NSLayoutAttributeLeft constant:8];
+        [overlay autolayoutPinEdge:NSLayoutAttributeLeading toParentEdge:NSLayoutAttributeLeading constant:8];
         [overlay autolayoutPinEdge:NSLayoutAttributeTop toParentEdge:NSLayoutAttributeTop constant:self.navigationController.navigationBar.height*1.5];
     }
     else{
