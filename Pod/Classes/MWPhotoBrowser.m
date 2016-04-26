@@ -377,7 +377,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     ANGArtistOverlayView *overlay = (ANGArtistOverlayView *) [self.view viewWithTag:OVERLAY_TAG];
     
     if (!overlay){
-        overlay = [[ANGArtistOverlayView alloc] initWithArtist:artist andHideByLabel:YES];
+        overlay = [[ANGArtistOverlayView alloc] init];
+        overlay.artist = artist;
+        overlay.hideByLabel = YES;
         overlay.translatesAutoresizingMaskIntoConstraints = NO;
         overlay.tag = OVERLAY_TAG;
         [self.view addSubview:overlay];
