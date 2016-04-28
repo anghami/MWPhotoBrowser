@@ -15,6 +15,7 @@
 #import "UIImageView+BlurEffect.h"
 #import "ANGArtistOverlayView.h"
 #import "Photo.h"
+#import "ANGSectionedContentArtistViewController.h"
 
 #define PADDING                  10
 #define OVERLAY_TAG              3234234
@@ -369,31 +370,38 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     [_backgroundImageView blurMyImage];
 }
 
-- (void)addArtistOverlay:(Artist *)artist{
+- (void)addArtistOverlay:(Artist *)artist
+{
     if(!artist)
         return;
-    DDLogVerbose(@"[%@] Added overlay",THIS_FILE);
+    DDLogVerbose(@"[%@] Added overlay", THIS_FILE);
 
     ANGArtistOverlayView *overlay = (ANGArtistOverlayView *) [self.view viewWithTag:OVERLAY_TAG];
-    
-    if (!overlay){
+    if (!overlay)
+    {
         overlay = [[ANGArtistOverlayView alloc] init];
-        overlay.artist = artist;
-        overlay.hideByLabel = YES;
         overlay.translatesAutoresizingMaskIntoConstraints = NO;
         overlay.tag = OVERLAY_TAG;
+        overlay.hideByLabel = YES;
+        overlay.tapDelegate = self;
         [self.view addSubview:overlay];
         
         [overlay autolayoutWidthProportionalToParentWidth:1 constant:0];
         [overlay autolayoutPinEdge:NSLayoutAttributeLeading toParentEdge:NSLayoutAttributeLeading constant:8];
-        [overlay autolayoutPinEdge:NSLayoutAttributeTop toParentEdge:NSLayoutAttributeTop constant:self.navigationController.navigationBar.height*1.5];
+        [overlay autolayoutPinEdge:NSLayoutAttributeTop toParentEdge:NSLayoutAttributeTop constant:self.navigationController.navigationBar.height * 1.5];
     }
-    else{
-        if(![overlay.artist.artistId isEqualToString:artist.artistId])
-            overlay.artist = artist;
-    }
-    
+    overlay.titleLabel.text = artist.name;
+    overlay.imageView.coverArtId = artist.coverArtId;
+    [overlay.imageView startLoadWithPlaceHolder:[ANGArtworkFactory smallArtistPlaceHolder]];
 }
+
+- (void)didTapOverlay
+{
+    Artist *artist = [self artistForPhotoAtIndex:_currentPageIndex];
+    ANGSectionedContentArtistViewController *artistViewController = [[ANGSectionedContentArtistViewController alloc] initWithArtist:artist andParameters:nil];
+    [appDelegateS pushViewController:artistViewController];
+}
+
 
 // Release any retained subviews of the main view.
 - (void)viewDidUnload {
