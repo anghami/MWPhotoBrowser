@@ -382,7 +382,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         overlay = [[ANGArtistOverlayView alloc] init];
         overlay.translatesAutoresizingMaskIntoConstraints = NO;
         overlay.tag = OVERLAY_TAG;
-        overlay.hideByLabel = YES;
+        overlay.hideTitleLabel = YES;
+        overlay.byLabel.font = [UIFont systemFontOfSize:17.5 weight:UIFontWeightRegular];
         overlay.tapDelegate = self;
         [self.view addSubview:overlay];
         
@@ -390,7 +391,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         [overlay autolayoutPinEdge:NSLayoutAttributeLeading toParentEdge:NSLayoutAttributeLeading constant:8];
         [overlay autolayoutPinEdge:NSLayoutAttributeTop toParentEdge:NSLayoutAttributeTop constant:self.navigationController.navigationBar.height * 1.5];
     }
-    overlay.titleLabel.text = artist.name;
+    overlay.byLabel.text = artist.name;
     overlay.imageView.coverArtId = artist.coverArtId;
     [overlay.imageView startLoadWithPlaceHolder:[ANGArtworkFactory smallArtistPlaceHolder]];
 }
