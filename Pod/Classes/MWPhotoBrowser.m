@@ -389,7 +389,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         
         [overlay autolayoutWidthProportionalToParentWidth:1 constant:0];
         [overlay autolayoutPinEdge:NSLayoutAttributeLeading toParentEdge:NSLayoutAttributeLeading constant:8];
-        [overlay autolayoutPinEdge:NSLayoutAttributeTop toParentEdge:NSLayoutAttributeTop constant:self.navigationController.navigationBar.height * 1.5];
+        [overlay autolayoutPinEdge:NSLayoutAttributeTop toEdge:NSLayoutAttributeBottom ofSibling:self.topLayoutGuide constant:8];
+        [overlay autolayoutSetAttribute:NSLayoutAttributeHeight toConstant:64];
     }
     overlay.byLabel.text = artist.name;
     overlay.imageView.coverArtId = artist.coverArtId;
