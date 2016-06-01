@@ -166,7 +166,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     }
     if (!_enableGrid) _startOnGrid = NO;
 	
-    self.view.backgroundColor = [UIColor colorWithHexString:@"ececee"];
+    self.view.backgroundColor = AGGrayBackgroundColor;
     self.view.clipsToBounds = YES;
 	
 	// Setup paging scrolling view
@@ -179,7 +179,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 	_pagingScrollView.delegate = self;
 	_pagingScrollView.showsHorizontalScrollIndicator = NO;
 	_pagingScrollView.showsVerticalScrollIndicator = NO;
-    _pagingScrollView.backgroundColor = [UIColor colorWithHexString:@"ececee"];
+    _pagingScrollView.backgroundColor = AGGrayBackgroundColor;
     _pagingScrollView.contentSize = [self contentSizeForPagingScrollView];
 	[self.view addSubview:_pagingScrollView];
 	
@@ -349,7 +349,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
     // Added ImageView
     _backgroundImageView = [UIImageView new];
-    _backgroundImageView.backgroundColor = [UIColor colorWithHexString:@"ececee"];
+    _backgroundImageView.backgroundColor = AGGrayBackgroundColor;
     _backgroundImageView.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view insertSubview:_backgroundImageView atIndex:0];
     [_backgroundImageView autolayoutFillSuperview];

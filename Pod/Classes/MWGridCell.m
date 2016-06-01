@@ -30,7 +30,7 @@
     if ((self = [super initWithFrame:frame])) {
 
         // Grey background
-        self.backgroundColor = [UIColor colorWithHexString:@"ececee"];
+        self.backgroundColor = AGGrayBackgroundColor;
         // Image
         _imageView = [UIImageView new];
         _imageView.frame = self.bounds;
