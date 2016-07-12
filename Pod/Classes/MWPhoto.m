@@ -150,7 +150,6 @@ LOG_LEVEL_ANGHAMI_DEFAULT
         }
     }
     @catch (NSException *exception) {
-        DDLogVerbose(@"[%@] Loading  of image Failed",THIS_FILE);
         self.underlyingImage = nil;
         _loadingInProgress = NO;
         [self imageLoadingComplete];
@@ -329,7 +328,6 @@ LOG_LEVEL_ANGHAMI_DEFAULT
 }
 
 - (void)postCompleteNotification {
-    DDLogVerbose(@"[%@] Loading  of image postCompleteNotification",THIS_FILE);
     [[NSNotificationCenter defaultCenter] postNotificationName:MWPHOTO_LOADING_DID_END_NOTIFICATION
                                                         object:self];
 }

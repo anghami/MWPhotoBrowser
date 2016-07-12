@@ -44,7 +44,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 - (id)initWithDelegate:(id <MWPhotoBrowserDelegate>)delegate {
     if ((self = [self init])) {
         _delegate = delegate;
-        DDLogVerbose(@"[%@] init with delegate",THIS_FILE);
 	}
 	return self;
 }
@@ -282,8 +281,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     if (_enableGrid) {
         hasItems = YES;
         [items addObject:[[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:@"UIBarButtonItemGrid"]style:UIBarButtonItemStylePlain target:self action:@selector(showGridAnimated)]];
-        
-        DDLogVerbose(@"[%@] Added grid Button",THIS_FILE);
     } else {
         [items addObject:fixedSpace];
     }
@@ -291,7 +288,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     if (_placeToolBarItemsOnRightBar) {
         if(!_gridController && _actionButton){
             [items addObject:_actionButton];
-            DDLogVerbose(@"[%@] added share button",THIS_FILE);
         }
         self.navigationItem.rightBarButtonItems= items;
         goto CUSTOMSKIP;
@@ -725,7 +721,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             photo = [_photos objectAtIndex:index];
         }
     }
-    DDLogVerbose(@"[%@] returned photo %@",THIS_FILE,photo);
     return photo;
 }
 
@@ -746,7 +741,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             photo = [_thumbPhotos objectAtIndex:index];
         }
     }
-    DDLogVerbose(@"[%@] returned thumb %@",THIS_FILE,photo);
     return photo;
 }
 
@@ -765,7 +759,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             if ([photo caption]) captionView = [[MWCaptionView alloc] initWithPhoto:photo];
         }
     }
-    DDLogVerbose(@"[%@] returned caption %@",THIS_FILE,captionView);
     captionView.size = [captionView sizeThatFits:[self frameForPageAtIndex:index].size];
     return captionView;
 }
@@ -787,7 +780,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             return anArtist;
         }
     }
-    DDLogVerbose(@"[%@] returned anArtist %@",THIS_FILE, anArtist);
     return anArtist;
 
 }
@@ -1405,9 +1397,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 }
 
 - (void)showGrid:(BOOL)animated {
-
-    DDLogVerbose(@"[%@] Showing Grid",THIS_FILE);
-
     if (_gridController){
         [self hideGrid];
         return;
@@ -1465,8 +1454,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
     if (!_gridController) return;
     
-    DDLogVerbose(@"[%@] Hiding Grid",THIS_FILE);
-
     // Remember previous content offset
     _currentGridContentOffset = _gridController.collectionView.contentOffset;
     
