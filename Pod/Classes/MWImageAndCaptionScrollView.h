@@ -20,6 +20,9 @@
 @property (nonatomic, strong) MWCaptionView *captionView;
 @property (nonatomic, weak) UIButton *selectedButton;
 @property (nonatomic, weak) UIButton *playButton;
+@property (nonatomic, strong) ANGArtistOverlayView *artistOverlay;
+
+@property (nonatomic) BOOL isRecycled;
 
 - (id)initWithPhotoBrowser:(MWPhotoBrowser *)browser;
 - (void)displayImage;

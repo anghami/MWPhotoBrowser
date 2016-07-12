@@ -18,7 +18,6 @@
 #import "ANGSectionedContentArtistViewController.h"
 
 #define PADDING                  10
-#define OVERLAY_TAG              3234234
 
 LOG_LEVEL_ANGHAMI_DEFAULT
 
@@ -366,31 +365,21 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     [_backgroundImageView blurMyImage];
 }
 
-- (void)addArtistOverlay:(Artist *)artist
+- (ANGArtistOverlayView *)artistOverlayAtIndex:(NSUInteger)index
 {
+    Artist *artist = [self artistForPhotoAtIndex:index];
     if(!artist)
-        return;
-    DDLogVerbose(@"[%@] Added overlay", THIS_FILE);
-
-    ANGArtistOverlayView *overlay = (ANGArtistOverlayView *) [self.view viewWithTag:OVERLAY_TAG];
-    if (!overlay)
-    {
-        overlay = [[ANGArtistOverlayView alloc] init];
-        overlay.translatesAutoresizingMaskIntoConstraints = NO;
-        overlay.tag = OVERLAY_TAG;
-        overlay.hideTitleLabel = YES;
-        overlay.byLabel.font = [UIFont systemFontOfSize:17.5 weight:UIFontWeightRegular];
-        overlay.tapDelegate = self;
-        [self.view addSubview:overlay];
-        
-        [overlay autolayoutWidthProportionalToParentWidth:1 constant:0];
-        [overlay autolayoutPinEdge:NSLayoutAttributeLeading toParentEdge:NSLayoutAttributeLeading constant:8];
-        [overlay autolayoutPinEdge:NSLayoutAttributeTop toEdge:NSLayoutAttributeBottom ofSibling:self.topLayoutGuide constant:8];
-        [overlay autolayoutSetAttribute:NSLayoutAttributeHeight toConstant:64];
-    }
+        return nil;
+    ANGArtistOverlayView *overlay;
+    overlay = [[ANGArtistOverlayView alloc] init];
+    overlay.translatesAutoresizingMaskIntoConstraints = NO;
+    overlay.hideTitleLabel = YES;
+    overlay.byLabel.font = [UIFont systemFontOfSize:17.5 weight:UIFontWeightRegular];
+    overlay.tapDelegate = self;
     overlay.byLabel.text = artist.name;
     overlay.imageView.coverArtId = artist.coverArtId;
     [overlay.imageView startLoadWithPlaceHolder:[ANGArtworkFactory smallArtistPlaceHolder]];
+    return overlay;
 }
 
 - (void)didTapOverlay
@@ -440,12 +429,15 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 	// Super
 	[super viewWillAppear:animated];
     
-    
     // Initial appearance
     if (!_viewHasAppearedInitially) {
         if (_startOnGrid) {
             [self showGrid:NO];
+        } else {
+            [self hideAnghamiNavBar:YES];
         }
+    } else {
+        [self hideAnghamiNavBar:YES];
     }
     
     // If rotation occured while we're presenting a modal
@@ -455,11 +447,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         dispatch_async(dispatch_get_main_queue(), ^{
             [self tilePages];
         });
-    }
-    
-    // above code  will jump to page 0 and change the artist so Add here
-    if(!_startOnGrid) {
-        [self addArtistOverlay:[self artistForPhotoAtIndex:_currentPageIndex]];
     }
 }
 
@@ -632,16 +619,12 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
     if(!_gridController)
     {
-        // reset overlay
-        ANGArtistOverlayView *overlay = (ANGArtistOverlayView *) [self.view viewWithTag:OVERLAY_TAG];
-        [overlay removeFromSuperview];
-        overlay = nil;
-        [self addArtistOverlay:[self artistForPhotoAtIndex:_currentPageIndex]];
         _gradient.frame =self.view.bounds;
-        
         MWImageAndCaptionScrollView* currentPage = [self pageDisplayedAtIndex:_currentPageIndex];
         [currentPage.captionView removeFromSuperview];
         currentPage.captionView = [self captionViewForPhotoAtIndex:_currentPageIndex];
+        [currentPage.artistOverlay removeFromSuperview];
+        currentPage.artistOverlay = [self artistOverlayAtIndex:_currentPageIndex];
         [currentPage performLayout];
     }
 }
@@ -866,7 +849,12 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 
 #pragma mark - Paging
 
-- (void)tilePages {
+- (void)tilePages
+{
+    [self tilePagesImmediate:YES];
+}
+
+- (void)tilePagesImmediate:(BOOL)immediate {
 	
 	// Calculate which pages should be visible
 	// Ignore padding as paging bounces encroach on that
@@ -879,17 +867,24 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     if (iLastIndex < 0) iLastIndex = 0;
     if (iLastIndex > [self numberOfPhotos] - 1) iLastIndex = [self numberOfPhotos] - 1;
     
+   
 	// Recycle no longer needed pages
     NSInteger pageIndex;
 	for (MWImageAndCaptionScrollView *page in _visiblePages) {
         pageIndex = page.index;
 		if (pageIndex < (NSUInteger)iFirstIndex || pageIndex > (NSUInteger)iLastIndex) {
-			[_recycledPages addObject:page];
-            [page.selectedButton removeFromSuperview];
-            [page.playButton removeFromSuperview];
-            [page prepareForReuse];
-			[page removeFromSuperview];
-			MWLog(@"Removed page at index %lu", (unsigned long)pageIndex);
+            [_recycledPages addObject:page];
+            if(immediate) {
+                [self recyclePage:page];
+                MWLog(@"Removed page at index %lu", (unsigned long)pageIndex);
+            } else {
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                    if([_recycledPages containsObject:page]) {
+                        [self recyclePage:page];
+                        MWLog(@"Removed page at index %lu", (unsigned long)pageIndex);
+                    }
+                });
+            }
 		}
 	}
 	[_visiblePages minusSet:_recycledPages];
@@ -906,12 +901,13 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 				page = [[MWImageAndCaptionScrollView alloc] initWithPhotoBrowser:self];
 			}
 			[_visiblePages addObject:page];
+            
             // Add caption too
-			[self configurePage:page forIndex:index];
+            [self recyclePage:page];
+            [self configurePage:page forIndex:index];
 
 			[_pagingScrollView addSubview:page];
 			MWLog(@"Added page at index %lu", (unsigned long)index);
-            
             
             // Add play button if needed
             if (page.displayingVideo) {
@@ -948,6 +944,17 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 		}
 	}
 	
+}
+
+- (void)recyclePage:(MWImageAndCaptionScrollView *)page
+{
+    if(page.isRecycled)
+        return;
+    [page.selectedButton removeFromSuperview];
+    [page.playButton removeFromSuperview];
+    [page prepareForReuse];
+    [page removeFromSuperview];
+    page.isRecycled = YES;
 }
 
 - (void)updateVisiblePageStates {
@@ -990,7 +997,9 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 	page.frame = [self frameForPageAtIndex:index];
     page.index = index;
     page.captionView = [self captionViewForPhotoAtIndex:index];
+    page.artistOverlay = [self artistOverlayAtIndex:index];
     page.photo = [self photoAtIndex:index];
+    page.isRecycled = NO;
 }
 
 - (MWImageAndCaptionScrollView *)dequeueRecycledPage {
@@ -1133,7 +1142,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     if (!_viewIsActive || _performingLayout || _rotating) return;
     
     // Tile pages
-    [self tilePages];
+    [self tilePagesImmediate:NO];
     
     // Calculate current page
     CGRect visibleBounds = _pagingScrollView.bounds;
@@ -1182,12 +1191,17 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         UIImage* blurred=[[self photoAtIndex:_currentPageIndex] underlyingImage];
         if(blurred)
             [self setBackgroundBlurredImage: blurred];
-        [self addArtistOverlay:[self artistForPhotoAtIndex:_currentPageIndex]];
     }
-    
 }
 
 #pragma mark - Navigation
+
+- (void)hideAnghamiNavBar:(BOOL)hide
+{
+    if([self.navigationController isKindOfClass:[AnghamiNavigationController class]]) {
+        [(AnghamiNavigationController *)self.navigationController setHideAnghamiNavigationBar:hide];
+    }
+}
 
 - (void)updateNavigation {
     
@@ -1238,7 +1252,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 		CGRect pageFrame = [self frameForPageAtIndex:index];
         [_pagingScrollView setContentOffset:CGPointMake(pageFrame.origin.x - PADDING, 0) animated:animated];
 		[self updateNavigation];
-        [self  addArtistOverlay:[self artistForPhotoAtIndex:index]];
 	}
 }
 
@@ -1402,6 +1415,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         return;
     }
     
+    [self hideAnghamiNavBar:NO];
+    
     // Init grid controller
     _gridController = [[MWGridViewController alloc] init];
     _gridController.initialContentOffset = _currentGridContentOffset;
@@ -1454,6 +1469,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
     if (!_gridController) return;
     
+    [self hideAnghamiNavBar:YES];
+    
     // Remember previous content offset
     _currentGridContentOffset = _gridController.collectionView.contentOffset;
     
@@ -1480,7 +1497,6 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     // Update
     [self updateNavigation];
     [self updateVisiblePageStates];
-    [self addArtistOverlay:[self artistForPhotoAtIndex:_currentPageIndex]];
     
     // Animate, hide grid and show paging scroll view
     [UIView animateWithDuration:0.3 animations:^{

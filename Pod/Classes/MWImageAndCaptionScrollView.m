@@ -40,6 +40,7 @@
 		_photoImageView.contentMode = UIViewContentModeScaleAspectFill;
 		_photoImageView.backgroundColor = [UIColor clearColor];
         _photoImageView.image = [ANGArtworkFactory defaultPhotoPlaceHolder];
+        _photoImageView.clipsToBounds = YES;
 		[self addSubview:_photoImageView];
         
 		// Setup
@@ -62,6 +63,7 @@
     [self hideImageFailure];
     self.photo = nil;
     [self.captionView removeFromSuperview];
+    [self.artistOverlay removeFromSuperview];
     self.selectedButton = nil;
     self.playButton = nil;
     _photoImageView.hidden = NO;
@@ -170,6 +172,15 @@
     {
         [self addSubview:self.captionView];
     }
+    if(!self.artistOverlay.superview)
+    {
+        [self addSubview:self.artistOverlay];
+        [self.artistOverlay autolayoutWidthProportionalToParentWidth:1 constant:0];
+        [self.artistOverlay autolayoutPinEdge:NSLayoutAttributeLeading toParentEdge:NSLayoutAttributeLeading constant:8];
+        [self.artistOverlay autolayoutPinEdge:NSLayoutAttributeTop toParentEdge:NSLayoutAttributeTop constant:appDelegateS.topNavigationController.navigationBar.bottom];
+        [self.artistOverlay autolayoutSetAttribute:NSLayoutAttributeHeight toConstant:64];
+    }
+    
     
     // initial content
     self.contentSize = self.bounds.size;
