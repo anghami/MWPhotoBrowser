@@ -28,6 +28,8 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     UIImageView* _backgroundImageView;
     BOOL _scrollViewIsDragging;
     CAGradientLayer* _gradient;
+    
+    BOOL _navBarHidden;
 }
 
 
@@ -1196,10 +1198,16 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 
 #pragma mark - Navigation
 
+- (BOOL)hidesNavigationBar
+{
+    return _navBarHidden;
+}
+
 - (void)hideAnghamiNavBar:(BOOL)hide
 {
+    _navBarHidden = hide;
     if([self.navigationController isKindOfClass:[AnghamiNavigationController class]]) {
-        [(AnghamiNavigationController *)self.navigationController setHideAnghamiNavigationBar:hide];
+        [(AnghamiNavigationController *)self.navigationController refreshNavigationBar];
     }
 }
 
