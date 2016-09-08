@@ -388,7 +388,11 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 {
     Artist *artist = [self artistForPhotoAtIndex:_currentPageIndex];
     ANGSectionedContentArtistViewController *artistViewController = [[ANGSectionedContentArtistViewController alloc] initWithArtist:artist andParameters:nil];
-    [appDelegateS pushViewController:artistViewController];
+    if(self.navigationController) {
+        [self.navigationController pushViewController:artistViewController animated:YES];
+    } else {
+        [appDelegateS pushViewController:artistViewController];
+    }
 }
 
 
