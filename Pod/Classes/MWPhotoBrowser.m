@@ -1360,7 +1360,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
                                                object:_currentVideoPlayerViewController.moviePlayer];
 
     // Show
-    [self presentViewController:_currentVideoPlayerViewController animated:YES completion:nil];
+    [appDelegateS.rootViewController presentViewController:_currentVideoPlayerViewController animated:YES completion:nil];
 
 }
 
@@ -1614,7 +1614,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"8")) {
                 self.activityViewController.popoverPresentationController.barButtonItem = _actionButton;
             }
-            [self presentViewController:self.activityViewController animated:YES completion:nil];
+            [appDelegateS.rootViewController presentViewController:self.activityViewController animated:YES completion:nil];
 
         }
     }
