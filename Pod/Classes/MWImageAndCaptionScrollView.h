@@ -8,6 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import "MWPhotoProtocol.h"
+#import "ANGArtistOverlayView.h"
 
 @class MWPhotoBrowser, MWPhoto, MWCaptionView;
 
