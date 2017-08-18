@@ -188,9 +188,7 @@
 - (void)updateLikeState{
     // no Id can't like/unlike
     if(!_anghamiPhoto.iD){
-        BlockAlertView *alert = [BlockAlertView alertWithTitle:NSLocalizedString(@"Oops!", nil) message:NSLocalizedString(@"Something went wrong", nil) theme:BlockAlertViewTheme_Flat disableLinks:YES];
-        [alert setCancelButtonWithTitle:OK_STRING block:nil];
-        [alert showInQueue];
+        [appDelegateS showGenericErrorAlert];
         return;
     }
     
