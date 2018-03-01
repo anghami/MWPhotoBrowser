@@ -19,7 +19,7 @@
 
 #define PADDING                  10
 
-LOG_LEVEL_ANGHAMI_DEFAULT
+
 
 static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
 

@@ -14,7 +14,7 @@
 #import "MWPhotoBrowser.h"
 #import "ANGAsyncImageView.h"
 
-LOG_LEVEL_ANGHAMI_DEFAULT
+
 
 @interface MWPhoto () <ANGAsyncImageViewDelegate> {
 
