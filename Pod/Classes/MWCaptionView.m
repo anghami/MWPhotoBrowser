@@ -138,7 +138,7 @@
         [_likesAndDateView addSubview:_dateLabel];
     }
     [_dateLabel centerVertically];
-    if(IS_IOS9() && IsArabic)
+    if(IsArabic)
         _dateLabel.left = _likesAndDateView.left + labelPadding;
     else
     _dateLabel.right = _likesAndDateView.right - labelPadding;
@@ -152,7 +152,7 @@
         [_likesAndDateView addSubview:_likeButton];
     }
     [_likeButton centerVertically];
-    if(IS_IOS9() && IsArabic)
+    if(IsArabic)
         _likeButton.right = _likesAndDateView.right - labelPadding;
     else
         _likeButton.left = _likesAndDateView.left + labelPadding;
@@ -170,7 +170,7 @@
     _likesLabel.text = [self formattedLikes:_anghamiPhoto.numberOflikes];
     [_likesLabel sizeToFit];
     [_likesLabel centerVertically];
-    if(IS_IOS9() && IsArabic)
+    if(IsArabic)
         _likesLabel.right = _likeButton.left - labelPadding;
     else
         _likesLabel.left = _likeButton.right + labelPadding;
