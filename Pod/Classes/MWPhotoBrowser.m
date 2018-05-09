@@ -1585,7 +1585,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             [ANGSharer shareFromDictionary:@{
                                              @"image" : n2blank([(Photo *) _anghamiPhotos[_currentPageIndex] imageURL]),
                                              @"text" : n2blank([(Photo *) _anghamiPhotos[_currentPageIndex] caption])
-                                             }];
+                                             } withSource:@"photo browser"];
         } else {
             
             // Show activity view controller
